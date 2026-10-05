@@ -1,0 +1,22 @@
+{
+  "name": "kitchen-desk",
+  "version": "1.0.0",
+  "description": "Sales, prices and open items from a cloud kitchen WhatsApp group",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning src/server.js",
+    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.131.0",
+    "baileys": "^7.0.0-rc14",
+    "express": "^5.2.1",
+    "pino": "^10.4.0",
+    "qrcode": "^1.5.4"
+  },
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22.13"
+  }
+}
