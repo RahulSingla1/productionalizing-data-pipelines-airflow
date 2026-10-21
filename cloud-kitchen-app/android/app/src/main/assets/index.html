@@ -233,9 +233,14 @@ tfoot td { font-weight: 800; border-bottom: 0; }
   var D = fix(load());
   // The menu starts from menu.js. A newer menu.js replaces it, unless the menu was changed on a phone.
   (function () {
-    var v = window.KB_MENU_VERSION || 0;
+    var v = window.KB_MENU_VERSION || 0, base = JSON.parse(JSON.stringify(window.KB_MENU || []));
     if (!Array.isArray(D.menu) || (!D.menuEdited && (D.menuVersion || 0) < v)) {
-      D.menu = JSON.parse(JSON.stringify(window.KB_MENU || []));
+      D.menu = base; D.menuVersion = v;
+    } else if ((D.menuVersion || 0) < v) {
+      // the menu was changed on this phone: keep those changes, only add the new dishes
+      var have = {}, removed = D.menuRemoved || [];
+      D.menu.forEach(function (d) { have[d.id] = 1; });
+      base.forEach(function (d) { if (!have[d.id] && removed.indexOf(d.id) < 0) D.menu.push(d); });
       D.menuVersion = v;
     }
   })();
@@ -1117,7 +1122,8 @@ tfoot td { font-weight: 800; border-bottom: 0; }
         return;
       }
       if (kind === "dish") {
-        D.menu = (D.menu || []).filter(function (x) { return x.id !== id; }); D.menuEdited = true; save();
+        D.menu = (D.menu || []).filter(function (x) { return x.id !== id; }); D.menuEdited = true;
+        D.menuRemoved = (D.menuRemoved || []).concat([id]); save();
         sendEvent({ t: "dishdel", id: id }); say("ok", "Dish removed."); go("menu"); return;
       }
       if (kind === "code") { setCode(""); say("ok", "This phone stopped sharing orders."); go("settings"); return; }

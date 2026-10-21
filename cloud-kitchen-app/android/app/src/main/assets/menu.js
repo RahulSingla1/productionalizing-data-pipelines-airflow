@@ -2,7 +2,7 @@
 // Each dish: category, name, optional "has" (what is inside), and portions [label, price].
 // A price of 0 means "MRP": the price is typed when the order is taken.
 // Raise KB_MENU_VERSION whenever this list changes, so phones that never edited their menu get the new one.
-window.KB_MENU_VERSION = 1;
+window.KB_MENU_VERSION = 2;
 window.KB_MENU = (function () {
   var Q = "Qtr", H = "Half", F = "Full";
   var menu = [];
@@ -89,6 +89,10 @@ window.KB_MENU = (function () {
 
   // ---- Beverages (MRP: type the price when ordering)
   ["Coke", "Diet Coke", "Limca", "Soda", "Water Bottle (1 Ltr)"].forEach(function (n) { add("Beverages", n, [["MRP", 0]]); });
+
+  // ---- Added later (keep new dishes at the end so the ids above never change)
+  add("Soups", "Soup", [[H, 50], [F, 80]]);
+  add("Snacks", "Veg Momos", [["Half (5 pcs)", 60], ["Full (8 pcs)", 100]]);
 
   return menu.map(function (d, i) {
     return { id: "m" + (i + 1), cat: d.cat, name: d.name, has: d.has,
