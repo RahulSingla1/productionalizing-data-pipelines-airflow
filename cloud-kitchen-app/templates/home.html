@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Namaste, {{ me.name }} 🙏</h1>
+<p class="lead">{{ status.day.strftime("%A, %d %B") }}</p>
+
+{% set pending = todo|rejectattr(1)|list %}
+{% if todo %}
+  {% if pending %}
+    <div class="flash error">Please fill {{ pending|length }} thing{{ 's' if pending|length > 1 }} for today 👇</div>
+  {% else %}
+    <div class="flash ok">Everything is filled for today. Thank you! 👍</div>
+  {% endif %}
+{% endif %}
+
+<div class="tiles">
+  {% if can('finance') %}
+    <a class="tile {{ 'done' if status.sales_done else 'todo' }}" href="{{ url_for('sales') }}">
+      <span class="icon">💰</span>Today's Sales
+      <span class="state">{{ '✅ Filled' if status.sales_done else '❌ Not filled' }}</span>
+    </a>
+    <a class="tile {{ 'done' if status.expenses_done else 'todo' }}" href="{{ url_for('spent') }}">
+      <span class="icon">🧾</span>Money Spent
+      <span class="state">{{ '✅ %d added'|format(status.expense_count) if status.expenses_done else '❌ Nothing added' }}</span>
+    </a>
+  {% endif %}
+  {% if can('inventory') %}
+    <a class="tile {{ 'done' if status.stock_done else 'todo' }}" href="{{ url_for('stock') }}">
+      <span class="icon">📦</span>Stock Left
+      <span class="state">{{ '✅ Updated' if status.stock_done else '❌ Not updated' }}</span>
+    </a>
+    <a class="tile" href="{{ url_for('buy') }}">
+      <span class="icon">🛒</span>Need to Buy
+      {% set nbuy = (status.to_buy + status.low_stock)|unique|list|length %}
+      <span class="state muted">{{ nbuy }} item{{ 's' if nbuy != 1 }}</span>
+    </a>
+  {% endif %}
+  {% if can('finance') %}
+    <a class="tile" href="{{ url_for('report') }}"><span class="icon">📊</span>Reports</a>
+  {% endif %}
+  {% if can('owner') %}
+    <a class="tile" href="{{ url_for('people') }}"><span class="icon">👥</span>People</a>
+  {% endif %}
+</div>
+
+<div class="footer-actions">
+  <a class="btn light small" href="{{ url_for('account') }}">⚙️ My PIN &amp; reminders</a>
+  <form method="post" action="{{ url_for('logout') }}" class="inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="btn light small" type="submit">🚪 Log out</button>
+  </form>
+</div>
+<p class="muted small">Tip: add this page to your phone's home screen to open it like an app.</p>
+{% endblock %}

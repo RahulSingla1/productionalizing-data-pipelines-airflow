@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m with context %}
+{% block content %}
+<h1>🧾 Money Spent — {{ day|nice_date }}</h1>
+{{ m.day_switch('spent', day) }}
+
+<form method="post" class="card">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="day" value="{{ day.isoformat() }}">
+
+  {{ m.money_field('amount', 'How much money?', '', '') }}
+
+  <label>Spent on what? <span class="hint">Tap one</span></label>
+  <div class="choices">
+    {% for name, icon in categories %}
+      <input type="radio" name="category" id="cat{{ loop.index }}" value="{{ name }}">
+      <label for="cat{{ loop.index }}"><span class="icon">{{ icon }}</span>{{ name }}</label>
+    {% endfor %}
+  </div>
+
+  <label for="note">Details <span class="hint">Optional — e.g. "10 kg onion from Ramesh"</span></label>
+  <input type="text" id="note" name="note" autocomplete="off">
+
+  <button class="btn big green" type="submit">✓ Add</button>
+</form>
+
+<h2>Already added — total {{ money(total) }}</h2>
+{% if items %}
+  <ul class="list">
+    {% for e in items %}
+      <li>
+        <div><div class="what">{{ money(e.amount) }} · {{ e.category }}</div>
+          {% if e.note %}<div class="muted small">{{ e.note }}</div>{% endif %}</div>
+        <form method="post" action="{{ url_for('delete_spent', expense_id=e.id) }}" class="inline"
+              onsubmit="return confirm('Remove this?')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn red small" type="submit">Remove</button>
+        </form>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p class="muted">Nothing added yet.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>➕ Add new item</h1>
+<form method="post" class="card">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label for="name">Item name <span class="hint">e.g. Onion, Cooking oil, Rice</span></label>
+  <input type="text" id="name" name="name" required autocomplete="off" autofocus>
+
+  <label for="unit">Measured in</label>
+  <select id="unit" name="unit">{% for u in units %}<option>{{ u }}</option>{% endfor %}</select>
+
+  <label for="quantity">How much do you have now?</label>
+  <input type="text" inputmode="decimal" id="quantity" name="quantity" placeholder="0" autocomplete="off">
+
+  <label for="reorder_level">Warn me when it goes below <span class="hint">So it shows in "Need to buy" and the daily reminder</span></label>
+  <input type="text" inputmode="decimal" id="reorder_level" name="reorder_level" placeholder="0" autocomplete="off">
+
+  <button class="btn big green" type="submit">✓ Add</button>
+  <button class="btn big light" type="submit" name="again" value="1">✓ Add and add another</button>
+</form>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>📊 {{ month_label }}</h1>
+<p class="lead">This month so far</p>
+
+<div class="stats">
+  <div class="stat"><div class="label">Orders</div><div class="value">{{ totals.orders }}</div></div>
+  <div class="stat"><div class="label">Total sales</div><div class="value">{{ money(totals.sales) }}</div></div>
+  <div class="stat"><div class="label">Money received</div><div class="value">{{ money(totals.received) }}</div></div>
+  <div class="stat"><div class="label">Still to come</div><div class="value">{{ money(totals.to_come) }}</div></div>
+  <div class="stat"><div class="label">Money spent</div><div class="value">{{ money(totals.spent) }}</div></div>
+  <div class="stat"><div class="label">Sales − spent</div>
+    <div class="value" style="color: {{ 'var(--ok)' if totals.profit >= 0 else 'var(--bad)' }}">{{ money(totals.profit) }}</div></div>
+</div>
+
+{% if by_category %}
+  <h2>Where the money went</h2>
+  <ul class="list">
+    {% for c in by_category %}<li><span class="what">{{ c.category }}</span><span>{{ money(c.total) }}</span></li>{% endfor %}
+  </ul>
+{% endif %}
+
+<h2>Last 30 days</h2>
+<p class="muted small">Red rows = sales not filled for that day.</p>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Day</th><th>Orders</th><th>Sales</th><th>Received</th><th>To come</th><th>Spent</th></tr></thead>
+    <tbody>
+      {% for d in days %}
+        <tr class="{{ '' if d.filled else 'missing' }}">
+          <td>{{ d.date|nice_date }}</td>
+          <td>{{ d.orders if d.filled else '—' }}</td>
+          <td>{{ money(d.sales) if d.filled else 'not filled' }}</td>
+          <td>{{ money(d.received) if d.filled else '' }}</td>
+          <td>{{ money(d.to_come) if d.filled else '' }}</td>
+          <td>{{ money(d.spent) }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="footer-actions">
+  <a class="btn light" href="{{ url_for('report_download') }}">⬇️ Download for Excel</a>
+</div>
+{% endblock %}

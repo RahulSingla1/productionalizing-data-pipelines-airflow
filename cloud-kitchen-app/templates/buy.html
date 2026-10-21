@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>🛒 Need to Buy</h1>
+
+{% if open_items %}
+  <ul class="list">
+    {% for r in open_items %}
+      <li>
+        <div>
+          <div class="what">{{ r.item_name }}{% if r.quantity %} — {{ r.quantity|qty }} {{ r.unit or '' }}{% endif %}</div>
+          <div class="muted small">{% if r.note %}{{ r.note }} · {% endif %}added by {{ r.who or 'someone' }}</div>
+        </div>
+        <div class="row">
+          <form method="post" action="{{ url_for('buy_action', request_id=r.id, action='bought') }}" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn green small" type="submit">✓ Bought</button>
+          </form>
+          <form method="post" action="{{ url_for('buy_action', request_id=r.id, action='remove') }}" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn red small" type="submit">✕</button>
+          </form>
+        </div>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p class="muted">The list is empty. 👍</p>
+{% endif %}
+
+{% if low %}
+  <h2>⚠️ Running low (not on the list yet)</h2>
+  <ul class="list">
+    {% for i in low %}
+      <li class="low">
+        <div class="what">{{ i.name }} <span class="muted small">— {{ i.quantity|qty }} {{ i.unit }} left</span></div>
+        <form method="post" class="inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="item_name" value="{{ i.name }}">
+          <input type="hidden" name="unit" value="{{ i.unit }}">
+          <button class="btn small" type="submit">➕ Add to list</button>
+        </form>
+      </li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+<h2>Add something to buy</h2>
+<form method="post" class="card">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label for="item_name">What?</label>
+  <input type="text" id="item_name" name="item_name" list="known-items" required autocomplete="off">
+  <datalist id="known-items">{% for n in names %}<option value="{{ n }}">{% endfor %}</datalist>
+  <div class="row" style="align-items:flex-end">
+    <div style="flex:1; min-width:120px">
+      <label for="quantity">How much?</label>
+      <input type="text" inputmode="decimal" id="quantity" name="quantity" placeholder="0" autocomplete="off">
+    </div>
+    <div style="flex:1; min-width:120px">
+      <label for="unit">Unit</label>
+      <select id="unit" name="unit"><option value="">—</option>{% for u in units %}<option>{{ u }}</option>{% endfor %}</select>
+    </div>
+  </div>
+  <label for="note">Note <span class="hint">Optional — e.g. "from Ramesh"</span></label>
+  <input type="text" id="note" name="note" autocomplete="off">
+  <button class="btn big" type="submit">➕ Add to list</button>
+</form>
+
+{% if bought %}
+  <h2>Recently bought</h2>
+  <ul class="list">
+    {% for r in bought %}<li class="muted"><span>✅ {{ r.item_name }}</span><span>{{ r.quantity|qty }} {{ r.unit or '' }}</span></li>{% endfor %}
+  </ul>
+{% endif %}
+{% endblock %}

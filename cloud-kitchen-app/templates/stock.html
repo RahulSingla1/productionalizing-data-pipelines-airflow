@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>📦 Stock Left</h1>
+<p class="lead">Check the kitchen and type how much is left now. Leave a box empty if it hasn't changed.</p>
+
+{% if items %}
+<form method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {% for item in items %}
+    {% set low = item.quantity <= item.reorder_level %}
+    <div class="stock-row {{ 'low' if low }}">
+      <div>
+        <label for="qty_{{ item.id }}" class="name" style="margin:0">{{ item.name }}</label>
+        <div class="now">
+          Last count: {{ item.quantity|qty }} {{ item.unit }}
+          {% if item.id in updated_today %} · ✅ today{% endif %}
+          {% if low %} · <strong style="color:var(--bad)">running low</strong>{% endif %}
+        </div>
+        <a href="{{ url_for('stock_edit', item_id=item.id) }}">change item</a>
+      </div>
+      <div>
+        <input type="text" inputmode="decimal" id="qty_{{ item.id }}" name="qty_{{ item.id }}" placeholder="{{ item.quantity|qty }}" autocomplete="off">
+        <div class="muted small" style="text-align:center">{{ item.unit }}</div>
+      </div>
+    </div>
+  {% endfor %}
+  <button class="btn big green" type="submit">✓ Save stock</button>
+</form>
+{% else %}
+  <div class="card">
+    <p><strong>No items yet.</strong> Add the things you keep in the kitchen, like Onion, Oil, Rice, Paneer.</p>
+  </div>
+{% endif %}
+
+<div class="footer-actions">
+  <a class="btn light" href="{{ url_for('stock_new') }}">➕ Add new item</a>
+  <a class="btn light" href="{{ url_for('buy') }}">🛒 Need to buy</a>
+</div>
+{% endblock %}

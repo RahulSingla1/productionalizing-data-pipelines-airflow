@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Change: {{ item.name }}</h1>
+<form method="post" class="card">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label for="name">Item name</label>
+  <input type="text" id="name" name="name" value="{{ item.name }}" required>
+
+  <label for="unit">Measured in</label>
+  <select id="unit" name="unit">{% for u in units %}<option {{ 'selected' if u == item.unit }}>{{ u }}</option>{% endfor %}</select>
+
+  <label for="reorder_level">Warn me when it goes below</label>
+  <input type="text" inputmode="decimal" id="reorder_level" name="reorder_level" value="{{ item.reorder_level|qty }}">
+
+  <button class="btn big green" type="submit">✓ Save</button>
+</form>
+<form method="post" onsubmit="return confirm('Remove {{ item.name }} from the stock list?')">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <button class="btn red" type="submit" name="delete" value="1">🗑 Remove this item</button>
+</form>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Welcome! 👋</h1>
+<p class="lead">First, set up the owner. You can add other people later.</p>
+<form method="post" class="card">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label for="name">Your name</label>
+  <input type="text" id="name" name="name" required autocomplete="name">
+  <label for="pin">Choose a 4-number PIN <span class="hint">You will type this to open the app.</span></label>
+  <input type="password" id="pin" name="pin" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required>
+  <label for="phone">WhatsApp number <span class="hint">For daily reminders. With country code, like +919812345678</span></label>
+  <input type="tel" id="phone" name="phone" placeholder="+91...">
+  <button class="btn big" type="submit">Start ✓</button>
+</form>
+{% endblock %}

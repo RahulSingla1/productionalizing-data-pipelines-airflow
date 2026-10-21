@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Hello {{ person.name }} 🙏</h1>
+<p class="lead">Type your 4-number PIN.</p>
+<form method="post" id="pin-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="password" name="pin" id="pin" inputmode="numeric" pattern="[0-9]*" maxlength="4"
+         autocomplete="current-password" class="pin-display" aria-label="PIN" autofocus>
+  <div class="keypad" aria-hidden="true">
+    {% for n in "123456789" %}<button type="button" data-key="{{ n }}">{{ n }}</button>{% endfor %}
+    <button type="button" class="clear" data-key="clear">⌫ Clear</button>
+    <button type="button" data-key="0">0</button>
+    <button type="submit" class="go">Enter ✓</button>
+  </div>
+</form>
+<p style="text-align:center"><a href="{{ url_for('login') }}">← Not {{ person.name }}?</a></p>
+<p class="muted small" style="text-align:center">Forgot your PIN? Ask the owner to set a new one.</p>
+<script>
+  const pin = document.getElementById("pin");
+  document.querySelectorAll(".keypad [data-key]").forEach(b => b.addEventListener("click", () => {
+    const k = b.dataset.key;
+    if (k === "clear") pin.value = pin.value.slice(0, -1);
+    else if (pin.value.length < 4) pin.value += k;
+    if (pin.value.length === 4) document.getElementById("pin-form").submit();
+  }));
+  pin.addEventListener("input", () => { if (pin.value.length === 4) document.getElementById("pin-form").submit(); });
+</script>
+{% endblock %}

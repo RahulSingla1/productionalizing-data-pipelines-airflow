@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ 'Add a person' if is_new else 'Change: ' ~ person.name }}</h1>
+<form method="post" class="card">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label for="name">Name</label>
+  <input type="text" id="name" name="name" value="{{ person.name if person else '' }}" required>
+
+  <label for="pin">{{ '4-number PIN' if is_new else 'New PIN' }}
+    <span class="hint">{{ 'They will type this to open the app.' if is_new else 'Leave empty to keep the old PIN.' }}</span></label>
+  <input type="text" id="pin" name="pin" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" {{ 'required' if is_new }}>
+
+  <label for="phone">WhatsApp number <span class="hint">With country code, like +919812345678</span></label>
+  <input type="tel" id="phone" name="phone" value="{{ person.phone or '' if person else '' }}" placeholder="+91...">
+
+  <label for="email">Email <span class="hint">Optional</span></label>
+  <input type="email" id="email" name="email" value="{{ person.email or '' if person else '' }}">
+
+  <label>What can they see?</label>
+  <label class="check"><input type="checkbox" name="can_finance" value="1" {{ 'checked' if person and person.can_finance }}> 💰 Money (sales, money spent, reports)</label>
+  <label class="check"><input type="checkbox" name="can_inventory" value="1" {{ 'checked' if person and person.can_inventory }}> 📦 Stock (stock left, need to buy)</label>
+  <label class="check"><input type="checkbox" name="is_admin" value="1" {{ 'checked' if person and person.is_admin }}> 👑 Owner (everything + add people)</label>
+
+  <label>Other</label>
+  <label class="check"><input type="checkbox" name="reminders_enabled" value="1" {{ 'checked' if is_new or (person and person.reminders_enabled) }}> ⏰ Send daily reminder</label>
+  {% if not is_new %}
+    <label class="check"><input type="checkbox" name="active" value="1" {{ 'checked' if person.active }}> ✅ Can log in (untick if they left)</label>
+  {% endif %}
+
+  <button class="btn big green" type="submit">✓ Save</button>
+</form>
+<a href="{{ url_for('people') }}">← Back to People</a>
+{% endblock %}

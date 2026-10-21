@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>👥 People</h1>
+<p class="lead">Choose who can see Money and who can see Stock.</p>
+
+<ul class="list">
+  {% for u in users %}
+    <li style="{{ 'opacity:.55' if not u.active }}">
+      <div>
+        <div class="what">{{ u.name }}{% if not u.active %} (switched off){% endif %}</div>
+        <div class="muted small">
+          {% if u.is_admin %}👑 Owner — sees everything{% else %}
+            {{ '💰 Money' if u.can_finance }}{{ ' · ' if u.can_finance and u.can_inventory }}{{ '📦 Stock' if u.can_inventory }}
+            {% if not u.can_finance and not u.can_inventory %}No access yet{% endif %}
+          {% endif %}
+          · Reminders {{ 'on' if u.reminders_enabled else 'off' }}
+          {% if last.get(u.id) %}<br>Last reminder {{ last[u.id].sent_date }}: {{ last[u.id].status }}{% endif %}
+        </div>
+      </div>
+      <a class="btn light small" href="{{ url_for('person', user_id=u.id) }}">Change</a>
+    </li>
+  {% endfor %}
+</ul>
+<a class="btn big" href="{{ url_for('person') }}">➕ Add a person</a>
+
+<h2>⏰ Daily reminders</h2>
+<div class="card">
+  <p>Sent every day at <strong>{{ reminder_time }}</strong> to everyone with reminders on.</p>
+  <p>WhatsApp: <strong>{{ '✅ set up' if whatsapp_on else '❌ not set up' }}</strong> ·
+     Email: <strong>{{ '✅ set up' if email_on else '❌ not set up' }}</strong></p>
+  {% if not whatsapp_on and not email_on %}
+    <p class="muted small">Until WhatsApp or email is set up, reminders only show on each person's home screen. See the README for setup.</p>
+  {% endif %}
+  <form method="post" action="{{ url_for('remind_now') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="btn light" type="submit">📨 Send reminders now (test)</button>
+  </form>
+</div>
+{% endblock %}

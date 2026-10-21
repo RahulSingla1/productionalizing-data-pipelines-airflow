@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Who are you?</h1>
+<p class="lead">Tap your name.</p>
+<div class="people">
+  {% for p in people %}
+    <a class="person-btn" href="{{ url_for('login_pin', user_id=p.id) }}">
+      <span class="avatar">{{ p.name[0]|upper }}</span> {{ p.name }}
+    </a>
+  {% endfor %}
+</div>
+{% endblock %}

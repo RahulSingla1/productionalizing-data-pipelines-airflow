@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m with context %}
+{% block content %}
+<h1>💰 Sales — {{ day|nice_date }}</h1>
+{{ m.day_switch('sales', day) }}
+
+<form method="post" class="card">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="day" value="{{ day.isoformat() }}">
+
+  <label for="orders_count">How many orders?</label>
+  <input type="text" inputmode="numeric" pattern="[0-9]*" id="orders_count" name="orders_count"
+         value="{{ entry.orders_count if entry else '' }}" placeholder="0" autocomplete="off">
+
+  {{ m.money_field('sales_amount', 'Total sales', 'Full value of all orders today', entry.sales_amount if entry) }}
+  {{ m.money_field('money_received', 'Money received', 'Cash + UPI + card actually in hand / bank', entry.money_received if entry) }}
+  {{ m.money_field('money_receivable', 'Money still to come', 'From Swiggy / Zomato / customers who will pay later', entry.money_receivable if entry) }}
+
+  <label for="notes">Anything to remember? <span class="hint">Optional</span></label>
+  <textarea id="notes" name="notes" rows="2">{{ entry.notes if entry and entry.notes else '' }}</textarea>
+
+  <button class="btn big green" type="submit">✓ Save</button>
+</form>
+{% endblock %}

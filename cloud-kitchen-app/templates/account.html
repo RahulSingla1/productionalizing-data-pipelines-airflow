@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>⚙️ My settings</h1>
+<form method="post" class="card">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label for="phone">My WhatsApp number <span class="hint">With country code, like +919812345678</span></label>
+  <input type="tel" id="phone" name="phone" value="{{ me.phone or '' }}" placeholder="+91...">
+
+  <label class="check"><input type="checkbox" name="reminders_enabled" value="1" {{ 'checked' if me.reminders_enabled }}> ⏰ Send me a daily reminder</label>
+
+  <label for="pin">New PIN <span class="hint">Leave empty to keep your PIN</span></label>
+  <input type="password" id="pin" name="pin" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="new-password">
+
+  <button class="btn big green" type="submit">✓ Save</button>
+</form>
+{% endblock %}

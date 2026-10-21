@@ -1,0 +1,16 @@
+{% macro day_switch(endpoint, day) %}
+  <div class="days">
+    {% for label, d in [("Yesterday", -1), ("Today", 0)] %}
+      {% set target = (today_date + timedelta(days=d)) %}
+      <a href="{{ url_for(endpoint, day=target.isoformat()) }}" class="{{ 'on' if target == day }}">{{ label }}</a>
+    {% endfor %}
+  </div>
+{% endmacro %}
+
+{% macro money_field(name, label, hint, value) %}
+  <label for="{{ name }}">{{ label }}{% if hint %}<span class="hint">{{ hint }}</span>{% endif %}</label>
+  <div class="money-input">
+    <span>{{ currency }}</span>
+    <input type="text" inputmode="decimal" id="{{ name }}" name="{{ name }}" value="{{ value if value not in (none, '') else '' }}" placeholder="0" autocomplete="off">
+  </div>
+{% endmacro %}
