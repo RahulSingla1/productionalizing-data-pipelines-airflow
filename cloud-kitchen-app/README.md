@@ -1,5 +1,7 @@
 # 🍳 Cloud Kitchen Manager
 
+> **Want the offline phone app?** See [Kitchen Book, the Android app](#kitchen-book-android-app-works-offline) at the bottom.
+
 A very simple app for a cloud kitchen's **daily money** and **stock**, with a
 **daily WhatsApp/email reminder** for everyone who uses it.
 
@@ -147,3 +149,25 @@ also use **📊 Reports → Download for Excel**.
 pip install pytest
 python -m pytest tests
 ```
+
+---
+
+## Kitchen Book, the Android app (works offline)
+
+`android/` is a phone app that needs **no internet and no sign-in**. Everything is kept on the phone.
+
+**Download:** on the Android phone open
+https://github.com/RahulSingla1/productionalizing-data-pipelines-airflow/releases/download/kitchen-app/KitchenBook.apk
+and install it. Android will ask you to allow "Install unknown apps" for your browser once.
+
+What it does:
+- Today's sales, money spent, stock left and need-to-buy, with big buttons.
+- **Totals worked out automatically**: today, this month, and each day (Reports → ◀ ▶ to change month).
+- **Every entry can be changed**: tap a day in Reports, or ✏️ Change on any expense, or "change item" in Stock.
+- **📤 Send report** shares today's or the month's totals on WhatsApp.
+- **💾 Backup** makes a file to send to yourself; **Bring back a backup** restores it on a new phone.
+
+Because the data lives on one phone, make a backup every week.
+
+Any change pushed to `android/` rebuilds the app automatically (`.github/workflows/kitchen-android.yml`)
+and replaces the download. New versions install over the old one and keep the data.
