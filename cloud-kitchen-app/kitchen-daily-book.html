@@ -40,8 +40,9 @@ html { font-size: 19px; -webkit-text-size-adjust: 100%; }
 body { background: var(--bg); color: var(--fg); font-family: var(--font); line-height: 1.45; font-size: 1rem; }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--brand); }
 
+.bars { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; }
 .top {
-  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--brand); color: var(--brand-ink);
+  background: var(--brand); color: var(--brand-ink);
   display: flex; align-items: center; gap: 10px;
   padding-block: 10px;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
@@ -141,14 +142,21 @@ th:first-child, td:first-child { text-align: left; }
 th { font-size: .82rem; color: var(--muted); }
 tr.miss td { color: var(--bad); }
 .pos { color: var(--ok); } .neg { color: var(--bad); }
+.netbar { font-weight: 700; font-size: .95rem;
+  padding-block: 8px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background: var(--brand-soft); color: var(--fg); border-bottom: 1px solid var(--line); }
+.netbar.off { background: var(--bad-bg); color: var(--bad); }
 .footer { margin-top: 30px; display: flex; gap: 10px; flex-wrap: wrap; }
 @media (prefers-reduced-motion: reduce) { .tile:active { transform: none; } }
 </style>
 
+<div class="bars">
 <header class="top">
   <div class="name">🍳 Kitchen Daily Book</div>
   <button type="button" id="homeBtn" data-go="home" hidden>🏠 Home</button>
 </header>
+<div id="netbar" class="netbar" role="status" hidden></div>
+</div>
 <main id="app">
   <h1>Opening your kitchen book…</h1>
   <p class="lead">Today's sales, money spent and stock will show here in a moment.</p>
@@ -204,11 +212,11 @@ tr.miss td { color: var(--bad); }
       '<button type="button" data-day="' + t + '" class="' + (S.day === t ? "on" : "") + '">Today</button></div>';
   }
   function flashHtml() {
-    if (!S.flash) return "";
-    var f = S.flash; S.flash = null;
+    if (!S.flash || Date.now() - S.flash[2] > 10000) return "";
+    var f = S.flash;
     return '<div class="flash ' + f[0] + '" role="status">' + esc(f[1]) + "</div>";
   }
-  function say(kind, text) { S.flash = [kind, text]; }
+  function say(kind, text) { S.flash = [kind, text, Date.now()]; }
   function failText(e) {
     if (e && e.code === "quota_exceeded") return "The book is full. Ask the owner to remove old entries.";
     if (e && e.code === "invalid_argument") return "You can't change this part. Ask the owner for access.";
@@ -471,10 +479,110 @@ tr.miss td { color: var(--bad); }
     pending = setTimeout(function () { pending = null; if (S.dirty) renderLive(); else render(); }, 30);
   }
 
-  // ---------- actions
+  // ---------- offline-first saving
+  // Every change goes into an "outbox" kept on this phone first, shows on screen at once,
+  // and is sent to the shared book in order. If the internet is down, it waits and retries.
+  // All writes are set / update / delete with fixed ids, so sending one twice is harmless.
+  var OUTBOX_KEY = "kdb-outbox-v1", CACHE_KEY = "kdb-cache-v1";
   function base() { return { by: S.myId || null, at: Date.now() }; }
   function assign(target, src) { for (var k in src) target[k] = src[k]; return target; }
   function busy(form, on) { Array.prototype.forEach.call(form.querySelectorAll("button"), function (b) { b.disabled = on; }); }
+  function newId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+  function readStore(key) { try { return JSON.parse(localStorage.getItem(key) || "null"); } catch (e) { return null; } }
+  function writeStore(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { /* memory only */ } }
+
+  S.server = { items: [], buy: [], money: [], spent: [] };
+  S.outbox = readStore(OUTBOX_KEY) || [];
+  S.offline = false;
+
+  function overlay(col) {
+    var map = {};
+    S.server[col].forEach(function (r) { map[r.id] = r; });
+    S.outbox.forEach(function (op) {
+      var p = op.path.split("/"), id = p[1];
+      if (p[0] !== col) return;
+      if (op.op === "set") map[id] = assign({ id: id }, op.data);
+      else if (op.op === "update") { if (map[id]) map[id] = assign(assign({}, map[id]), op.data); }
+      else delete map[id];
+    });
+    return Object.keys(map).map(function (k) { return map[k]; });
+  }
+  function recompute() {
+    S.items = overlay("items").sort(function (a, b) { return String(a.name).toLowerCase() < String(b.name).toLowerCase() ? -1 : 1; });
+    S.buy = overlay("buy");
+    var m = {};
+    overlay("money").forEach(function (r) { m[r.date] = r; });
+    S.sales = m;
+    S.spent = overlay("spent");
+  }
+  var cacheTimer;
+  function saveCache() {
+    clearTimeout(cacheTimer);
+    cacheTimer = setTimeout(function () {
+      var srv = S.money ? S.server : { items: S.server.items, buy: S.server.buy, money: [], spent: [] };
+      writeStore(CACHE_KEY, { money: S.money, server: srv, at: Date.now() });
+    }, 500);
+  }
+
+  function queue(ops) {
+    ops.forEach(function (op) { S.outbox.push(op); });
+    writeStore(OUTBOX_KEY, S.outbox);
+    recompute(); updateNet();
+    flush();
+  }
+  function savedText(text) {
+    return (S.offline || !navigator.onLine) ? text + " on this phone. It will be sent when the internet is back." : text;
+  }
+  function withTimeout(p, ms) {
+    return Promise.race([p, new Promise(function (_, rej) { setTimeout(function () { rej({ code: "timeout" }); }, ms); })]);
+  }
+  function send(op) {
+    var ref = S.db.doc(op.path);
+    return op.op === "set" ? ref.set(op.data) : op.op === "update" ? ref.update(op.data) : ref.delete();
+  }
+  var flushing = false;
+  async function flush() {
+    if (flushing || !S.db || !S.outbox.length) return;
+    flushing = true; updateNet();
+    try {
+      while (S.outbox.length) {
+        var op = S.outbox[0];
+        try {
+          await withTimeout(send(op), 15000);
+        } catch (e) {
+          var code = e && e.code;
+          if (code === "invalid_argument" || code === "transform_error" || code === "quota_exceeded" || code === "revoked" || code === "not_granted") {
+            // can never succeed (no access, item already removed, book full): drop it and say so
+            say("bad", code === "quota_exceeded" ? "The book is full, one entry could not be saved. Ask the owner to remove old entries."
+              : "One entry could not be saved because you don't have access to that part.");
+          } else {
+            S.offline = true;
+            break;
+          }
+        }
+        S.outbox.shift();
+        writeStore(OUTBOX_KEY, S.outbox);
+        S.offline = false;
+      }
+    } finally {
+      flushing = false;
+      recompute(); updateNet(); refresh();
+    }
+  }
+  window.addEventListener("online", function () { S.offline = false; updateNet(); flush(); });
+  window.addEventListener("offline", function () { updateNet(); });
+  setInterval(function () { if (S.outbox.length) flush(); }, 20000);
+
+  var netbar = document.getElementById("netbar");
+  function updateNet() {
+    var n = S.outbox.length, off = S.offline || !navigator.onLine, text = "";
+    if (n && off) text = "📴 No internet. " + n + " entr" + (n === 1 ? "y" : "ies") + " saved on this phone. They will be sent automatically.";
+    else if (n) text = "⏳ Sending " + n + " entr" + (n === 1 ? "y" : "ies") + "…";
+    else if (off) text = "📴 No internet. You can keep filling. Everything will be sent when the internet is back.";
+    netbar.textContent = text;
+    netbar.hidden = !text;
+    netbar.className = "netbar" + (off ? " off" : "");
+  }
 
   var forms = {
     sales: async function (f) {
@@ -486,9 +594,8 @@ tr.miss td { color: var(--bad); }
         toCome: num(f.toCome.value, "Money still to come"),
         notes: f.notes.value.trim()
       };
-      await S.db.doc("money/" + S.day).set(assign(data, base()));
-      S.sales[S.day] = data;
-      say("ok", "Saved ✅ Sales for " + nice(S.day).toLowerCase());
+      queue([{ op: "set", path: "money/" + S.day, data: assign(data, base()) }]);
+      say("ok", savedText("Saved ✅ Sales for " + nice(S.day).toLowerCase()));
       go("home");
     },
     spent: async function (f) {
@@ -496,48 +603,48 @@ tr.miss td { color: var(--bad); }
       if (!(amount > 0)) throw new Error("Please type how much money was spent.");
       var cat = (f.querySelector("input[name=cat]:checked") || {}).value;
       if (!cat) throw new Error("Please tap what the money was spent on.");
-      await S.db.collection("spent").add(assign({ date: S.day, amount: amount, cat: cat, note: f.note.value.trim() }, base()));
-      say("ok", "Saved ✅ " + rs(amount) + " for " + cat);
+      queue([{ op: "set", path: "spent/" + newId(), data: assign({ date: S.day, amount: amount, cat: cat, note: f.note.value.trim() }, base()) }]);
+      say("ok", savedText("Saved ✅ " + rs(amount) + " for " + cat));
       go("spent", { day: S.day });
     },
     stock: async function (f) {
-      var t = today(), changes = [];
+      var t = today(), ops = [];
       S.items.forEach(function (i) {
         var el = f.elements[i.id];
-        if (el && el.value.trim() !== "") changes.push([i, num(el.value, i.name)]);
+        if (el && el.value.trim() !== "") {
+          ops.push({ op: "update", path: "items/" + i.id, data: { qty: num(el.value, i.name), countedOn: t, by: S.myId || null, at: Date.now() } });
+        }
       });
-      if (!changes.length) throw new Error("Type how much is left in at least one box.");
-      for (var k = 0; k < changes.length; k++) {
-        await S.db.doc("items/" + changes[k][0].id).update({ qty: changes[k][1], countedOn: t, by: S.myId || null, at: Date.now() });
-      }
-      say("ok", "Saved ✅ " + changes.length + " item" + (changes.length > 1 ? "s" : "") + " updated");
+      if (!ops.length) throw new Error("Type how much is left in at least one box.");
+      queue(ops);
+      say("ok", savedText("Saved ✅ " + ops.length + " item" + (ops.length > 1 ? "s" : "") + " updated"));
       go("home");
     },
     stocknew: async function (f, submitter) {
       var name = f.name.value.trim();
       if (!name) throw new Error("Please type the item name.");
       if (S.items.some(function (i) { return i.name.toLowerCase() === name.toLowerCase(); })) throw new Error("“" + name + "” is already in the list.");
-      await S.db.collection("items").add(assign({
+      queue([{ op: "set", path: "items/" + newId(), data: assign({
         name: name, unit: f.unit.value, qty: num(f.qty.value, "How much do you have now?"),
-        low: num(f.low.value, "Warn me when it goes below"), countedOn: null }, base()));
-      say("ok", "Added ✅ " + name);
+        low: num(f.low.value, "Warn me when it goes below"), countedOn: null }, base()) }]);
+      say("ok", savedText("Added ✅ " + name));
       go(submitter && submitter.value === "again" ? "stocknew" : "stock");
     },
     stockedit: async function (f) {
       var name = f.name.value.trim();
       if (!name) throw new Error("Please type the item name.");
       if (S.items.some(function (i) { return i.id !== S.editId && i.name.toLowerCase() === name.toLowerCase(); })) throw new Error("Another item already has that name.");
-      await S.db.doc("items/" + S.editId).update({ name: name, unit: f.unit.value, low: num(f.low.value, "Warn me when it goes below") });
-      say("ok", "Saved ✅ " + name);
+      queue([{ op: "update", path: "items/" + S.editId, data: { name: name, unit: f.unit.value, low: num(f.low.value, "Warn me when it goes below") } }]);
+      say("ok", savedText("Saved ✅ " + name));
       go("stock");
     },
     buy: async function (f) {
       var name = f.name.value.trim();
       if (!name) throw new Error("Please type what needs to be bought.");
       var known = S.items.find(function (i) { return i.name.toLowerCase() === name.toLowerCase(); });
-      await S.db.collection("buy").add(assign({ name: known ? known.name : name, qty: num(f.qty.value, "How much?"),
-        unit: f.unit.value || (known ? known.unit : ""), note: f.note.value.trim(), status: "open" }, base()));
-      say("ok", "Added ✅ " + name);
+      queue([{ op: "set", path: "buy/" + newId(), data: assign({ name: known ? known.name : name, qty: num(f.qty.value, "How much?"),
+        unit: f.unit.value || (known ? known.unit : ""), note: f.note.value.trim(), status: "open" }, base()) }]);
+      say("ok", savedText("Added ✅ " + name));
       go("buy");
     }
   };
@@ -548,24 +655,26 @@ tr.miss td { color: var(--bad); }
       if (S.armed !== key) { S.armed = key; update(); return; }
       S.armed = null;
       var parts = key.split(":"), kind = parts[0], id = parts.slice(1).join(":");
-      if (kind === "spent") { await S.db.doc("spent/" + id).delete(); say("ok", "Removed."); update(); }
-      if (kind === "buy") { await S.db.doc("buy/" + id).delete(); say("ok", "Removed from the list."); update(); }
-      if (kind === "item") { await S.db.doc("items/" + id).delete(); say("ok", "Item removed."); go("stock"); }
+      var col = kind === "item" ? "items" : kind;
+      queue([{ op: "delete", path: col + "/" + id }]);
+      if (kind === "item") { say("ok", savedText("Item removed")); go("stock"); }
+      else { say("ok", savedText(kind === "buy" ? "Removed from the list" : "Removed")); update(); }
     },
     bought: async function (b) {
       var r = S.buy.find(function (x) { return x.id === b.dataset.id; });
       if (!r) return;
-      await S.db.doc("buy/" + r.id).update({ status: "bought", boughtOn: today(), at: Date.now() });
-      var item = S.items.find(function (i) { return i.name.toLowerCase() === r.name.toLowerCase(); });
-      if (item && r.qty) await S.db.doc("items/" + item.id).update({ qty: Number(item.qty || 0) + Number(r.qty) });
-      say("ok", "Bought ✅ " + r.name + (item && r.qty ? " (added to stock)" : ""));
+      var ops = [{ op: "update", path: "buy/" + r.id, data: { status: "bought", boughtOn: today(), at: Date.now() } }];
+      var item = S.items.find(function (i) { return i.name.toLowerCase() === String(r.name).toLowerCase(); });
+      if (item && r.qty) ops.push({ op: "update", path: "items/" + item.id, data: { qty: Math.round((Number(item.qty || 0) + Number(r.qty)) * 100) / 100 } });
+      queue(ops);
+      say("ok", savedText("Bought ✅ " + r.name + (item && r.qty ? " (added to stock)" : "")));
       update();
     },
     addlow: async function (b) {
       var i = S.items.find(function (x) { return x.id === b.dataset.id; });
       if (!i) return;
-      await S.db.collection("buy").add(assign({ name: i.name, qty: 0, unit: i.unit, note: "", status: "open" }, base()));
-      say("ok", "Added ✅ " + i.name);
+      queue([{ op: "set", path: "buy/" + newId(), data: assign({ name: i.name, qty: 0, unit: i.unit, note: "", status: "open" }, base()) }]);
+      say("ok", savedText("Added ✅ " + i.name));
       update();
     },
     csv: async function () {
@@ -584,8 +693,8 @@ tr.miss td { color: var(--bad); }
   document.addEventListener("click", function (e) {
     var b = e.target.closest("[data-go],[data-act],[data-day]");
     if (!b || !S.loaded) return;
-    if (b.dataset.day) { go(S.view, { day: b.dataset.day }); return; }
-    if (b.dataset.go) { go(b.dataset.go, { id: b.dataset.id }); return; }
+    if (b.dataset.day) { S.flash = null; go(S.view, { day: b.dataset.day }); return; }
+    if (b.dataset.go) { S.flash = null; go(b.dataset.go, { id: b.dataset.id }); return; }
     var fn = acts[b.dataset.act];
     if (!fn) return;
     b.disabled = true;
@@ -611,6 +720,13 @@ tr.miss td { color: var(--bad); }
   // ---------- start
   function rows(snap) { return snap.docs.map(function (d) { return assign({ id: d.id }, d.data()); }); }
   function onErr() { /* subscriptions recover on their own; a terminal error just leaves the last data on screen */ }
+  function listen(col, query) {
+    query.onSnapshot(function (s) {
+      S.server[col] = rows(s);
+      if (!s.metadata.fromCache) S.offline = false;
+      recompute(); saveCache(); updateNet(); refresh();
+    }, onErr);
+  }
 
   async function start() {
     var c = window.claude;
@@ -624,17 +740,24 @@ tr.miss td { color: var(--bad); }
       var w = await S.user.can("data.write");
       S.canWrite = w !== false;
     }
+    // show the copy saved on this phone straight away, then the live book replaces it
+    var cache = readStore(CACHE_KEY);
+    if (cache && cache.server) {
+      S.server = S.money ? cache.server : { items: cache.server.items || [], buy: cache.server.buy || [], money: [], spent: [] };
+    }
+    recompute();
     var since = addDays(today(), -40);
     since = since < today().slice(0, 8) + "01" ? since : today().slice(0, 8) + "01";
-    S.db.collection("items").orderBy("name").onSnapshot(function (s) { S.items = rows(s); refresh(); }, onErr);
-    S.db.collection("buy").orderBy("at", "desc").limit(300).onSnapshot(function (s) { S.buy = rows(s); refresh(); }, onErr);
+    listen("items", S.db.collection("items").orderBy("name"));
+    listen("buy", S.db.collection("buy").orderBy("at", "desc").limit(300));
     if (S.money) {
-      S.db.collection("money").where("date", ">=", since).onSnapshot(function (s) {
-        var m = {}; rows(s).forEach(function (r) { m[r.date] = r; }); S.sales = m; refresh(); }, onErr);
-      S.db.collection("spent").where("date", ">=", since).onSnapshot(function (s) { S.spent = rows(s); refresh(); }, onErr);
+      listen("money", S.db.collection("money").where("date", ">=", since));
+      listen("spent", S.db.collection("spent").where("date", ">=", since));
     }
     S.loaded = true;
+    updateNet();
     render();
+    flush();
   }
   start().catch(function () { S.failed = true; render(); });
 })();
