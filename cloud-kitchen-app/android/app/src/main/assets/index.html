@@ -133,6 +133,26 @@ tr.miss td { color: var(--bad); }
 tfoot td { font-weight: 800; border-bottom: 0; }
 .footer { margin-top: 26px; display: flex; gap: 10px; flex-wrap: wrap; }
 .confirm { border: 2px solid var(--bad); }
+.take { width: 100%; min-height: 76px; font-size: 1.45rem; margin-top: 14px; }
+.oline { border: 1px solid var(--line); border-radius: 14px; padding: 4px 12px 12px; background: var(--bg); }
+.oline label { margin-top: 10px; font-size: .95rem; }
+.oline-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 10px; align-items: end; }
+.oline .lineamt { margin-top: 6px; font-weight: 700; }
+.ordertotal { margin-top: 16px; font-size: 1.35rem; font-weight: 800; display: flex; justify-content: space-between; align-items: baseline;
+  padding: 12px 14px; border-radius: 14px; background: var(--brand-soft); font-variant-numeric: tabular-nums; }
+.choices.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.badge { display: inline-block; font-size: .8rem; font-weight: 700; border-radius: 999px; padding: 1px 10px; margin-left: 6px; vertical-align: 2px; }
+.badge.paid { background: var(--ok-bg); color: var(--ok); }
+.badge.later { background: var(--brand-soft); color: var(--brand); }
+.badge.gone { background: var(--bad-bg); color: var(--bad); }
+.order.gone .what, .order.gone .items { text-decoration: line-through; opacity: .7; }
+.order .items { margin-top: 2px; }
+.order a.tel { color: inherit; font-weight: 600; }
+.code { font-family: ui-monospace, "Roboto Mono", monospace; font-size: 1.5rem; font-weight: 800; letter-spacing: .05em;
+  padding: 10px 14px; border-radius: 12px; background: var(--bg); border: 2px dashed var(--line); user-select: all; text-align: center; }
+.netline { font-size: .9rem; font-weight: 700; padding: 8px 12px; border-radius: 12px; margin: 10px 0; }
+.netline.ok { background: var(--ok-bg); color: var(--ok); }
+.netline.off { background: var(--bad-bg); color: var(--bad); }
 @media (prefers-reduced-motion: reduce) { .tile:active { transform: none; } }
 </style>
 </head>
@@ -156,14 +176,21 @@ tfoot td { font-weight: 800; border-bottom: 0; }
   var app = document.getElementById("app");
 
   // ---------- data (all on this phone)
-  function blank() { return { v: 1, kitchen: "My Cloud Kitchen", sales: {}, spent: [], items: [], buy: [], lastBackup: null }; }
-  function fix(d) { var b = blank(); for (var k in b) if (d[k] == null) d[k] = b[k]; return d; }
+  function blank() {
+    return { v: 1, kitchen: "My Cloud Kitchen", sales: {}, spent: [], items: [], buy: [], lastBackup: null,
+      orders: {}, prices: {}, outbox: [], sync: { last: null }, code: "", phoneName: "", server: "https://ntfy.sh", deviceId: null };
+  }
+  function fix(d) {
+    var b = blank(); for (var k in b) if (d[k] == null) d[k] = b[k];
+    if (!d.deviceId) d.deviceId = Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+    return d;
+  }
   function load() {
     try { var d = JSON.parse(localStorage.getItem(KEY) || "null"); if (d && d.v === 1) return fix(d); } catch (e) {}
     try { var p = JSON.parse(localStorage.getItem(PREV) || "null"); if (p && p.v === 1) return fix(p); } catch (e) {}
     return blank();
   }
-  var D = load();
+  var D = fix(load());
   var storageOk = true;
   function save() {
     try {
@@ -203,14 +230,14 @@ tfoot td { font-weight: 800; border-bottom: 0; }
     return whole ? Math.round(n) : Math.round(n * 100) / 100;
   }
   function newId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
-  function say(kind, text) { U.flash = [kind, text]; }
-  function flashHtml() { if (!U.flash) return ""; var f = U.flash; U.flash = null;
+  function say(kind, text) { U.flash = [kind, text, Date.now()]; }
+  function flashHtml() { if (!U.flash || Date.now() - U.flash[2] > 8000) return ""; var f = U.flash;
     return '<div class="flash ' + f[0] + '" role="status">' + esc(f[1]) + "</div>"; }
   function go(view, extra) {
     extra = extra || {};
-    U.view = view; U.armed = null; U.restore = null;
+    U.view = view; U.armed = null; U.restore = null; U.dirty = false;
     U.editId = extra.id || null;
-    U.day = extra.day || (view === "sales" || view === "spent" ? today() : null);
+    U.day = extra.day || (view === "sales" || view === "spent" || view === "orders" ? today() : null);
     if (view === "report") U.month = extra.month || U.month || today().slice(0, 7);
     render(); window.scrollTo(0, 0);
   }
@@ -219,19 +246,44 @@ tfoot td { font-weight: 800; border-bottom: 0; }
   // ---------- totals (worked out automatically)
   function spentOn(d) { return D.spent.filter(function (x) { return x.date === d; }); }
   function sum(list, f) { return list.reduce(function (s, x) { return s + Number(x[f] || 0); }, 0); }
+  function ordersOn(d) {
+    return Object.keys(D.orders).map(function (k) { return D.orders[k]; })
+      .filter(function (o) { return o.date === d && o.status !== "deleted" && !o.ghost; })
+      .sort(function (a, b) { return b.at - a.at; });
+  }
+  function orderStats(list) {
+    var t = { count: 0, total: 0, paid: 0, unpaid: 0 };
+    list.forEach(function (o) {
+      if (o.status !== "ok") return;
+      t.count++; t.total += Number(o.total || 0);
+      if (o.paid) t.paid += Number(o.total || 0); else t.unpaid += Number(o.total || 0);
+    });
+    return t;
+  }
+  // Day totals = orders taken in the app + the "other sales" typed on the Sales screen.
   function dayTotals(d) {
-    var s = D.sales[d] || {}, sp = spentOn(d);
-    return { filled: !!D.sales[d], orders: Number(s.orders || 0), sales: Number(s.sales || 0), received: Number(s.received || 0),
-      toCome: Number(s.toCome || 0), spent: sum(sp, "amount"), spentCount: sp.length, spentList: sp };
+    var s = D.sales[d] || {}, sp = spentOn(d), os = orderStats(ordersOn(d));
+    return { filled: !!D.sales[d] || os.count > 0, typed: !!D.sales[d], os: os,
+      orders: Number(s.orders || 0) + os.count, sales: Number(s.sales || 0) + os.total,
+      received: Number(s.received || 0) + os.paid, toCome: Number(s.toCome || 0) + os.unpaid,
+      spent: sum(sp, "amount"), spentCount: sp.length, spentList: sp };
   }
   function monthTotals(ym) {
-    var t = { orders: 0, sales: 0, received: 0, toCome: 0, spent: 0, days: 0, cats: {} };
+    var t = { orders: 0, sales: 0, received: 0, toCome: 0, spent: 0, days: 0, cats: {} }, days = {};
     Object.keys(D.sales).forEach(function (d) {
       if (d.slice(0, 7) !== ym) return;
       var s = D.sales[d];
       t.orders += Number(s.orders || 0); t.sales += Number(s.sales || 0);
-      t.received += Number(s.received || 0); t.toCome += Number(s.toCome || 0); t.days++;
+      t.received += Number(s.received || 0); t.toCome += Number(s.toCome || 0); days[d] = 1;
     });
+    Object.keys(D.orders).forEach(function (k) {
+      var o = D.orders[k];
+      if (o.status !== "ok" || o.ghost || String(o.date).slice(0, 7) !== ym) return;
+      t.orders++; t.sales += Number(o.total || 0);
+      if (o.paid) t.received += Number(o.total || 0); else t.toCome += Number(o.total || 0);
+      days[o.date] = 1;
+    });
+    t.days = Object.keys(days).length;
     D.spent.forEach(function (x) {
       if (x.date.slice(0, 7) !== ym) return;
       t.spent += Number(x.amount || 0); t.cats[x.cat] = (t.cats[x.cat] || 0) + Number(x.amount || 0);
@@ -263,7 +315,8 @@ tfoot td { font-weight: 800; border-bottom: 0; }
     var t = dayTotals(d), m = monthTotals(d.slice(0, 7));
     var lines = ["🍳 " + D.kitchen + " – " + asDate(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }), ""];
     if (t.filled) {
-      lines.push("Orders: " + q(t.orders), "Sales: " + rs(t.sales), "Money received: " + rs(t.received), "Still to come: " + rs(t.toCome));
+      lines.push("Orders: " + q(t.orders) + (t.os.count ? " (" + t.os.count + " taken in the app)" : ""),
+        "Sales: " + rs(t.sales), "Money received: " + rs(t.received), "Still to come: " + rs(t.toCome));
     } else {
       lines.push("Sales: not filled yet");
     }
@@ -322,7 +375,9 @@ tfoot td { font-weight: 800; border-bottom: 0; }
       '<p class="lead">' + esc(new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })) + "</p>" + flashHtml();
     h += pending ? '<div class="flash bad">Please fill ' + pending + " thing" + (pending > 1 ? "s" : "") + " for today 👇</div>"
       : '<div class="flash ok">Everything is filled for today. Thank you! 👍</div>';
+    h += '<button type="button" class="btn take go" data-go="order">🛎️ Take an order</button>';
     h += '<div class="tiles">' +
+      tile("orders", "📋", "Today's Orders", null, td.os.count + " order" + (td.os.count === 1 ? "" : "s") + " · " + rs(td.os.total)) +
       tile("sales", "💰", "Today's Sales", td.filled, td.filled ? "✅ " + rs(td.sales) : "❌ Not filled") +
       tile("spent", "🧾", "Money Spent", td.spentCount > 0, td.spentCount ? "✅ " + rs(td.spent) : "❌ Nothing added") +
       tile("stock", "📦", "Stock Left", stockDone, stockDone ? "✅ Updated" : "❌ Not updated") +
@@ -343,9 +398,14 @@ tfoot td { font-weight: 800; border-bottom: 0; }
   };
 
   V.sales = function () {
-    var e = D.sales[U.day] || {};
-    var h = "<h1>💰 Sales: " + esc(nice(U.day)) + "</h1>" + dayPicker() + flashHtml() +
-      '<form class="card" data-form="sales">' +
+    var e = D.sales[U.day] || {}, os = orderStats(ordersOn(U.day));
+    var h = "<h1>💰 Sales: " + esc(nice(U.day)) + "</h1>" + dayPicker() + flashHtml();
+    if (os.count) {
+      h += '<div class="card"><h2>🛎️ From orders in the app</h2><div class="stats">' + stat("Orders", q(os.count)) + stat("Amount", rs(os.total)) +
+        stat("Paid", rs(os.paid)) + stat("To come", rs(os.unpaid)) + '</div><p class="muted small" style="margin-bottom:0">These are added to the totals automatically. ' +
+        'Below, only type sales that were <strong>not</strong> taken as orders here (for example Swiggy or Zomato).</p></div>';
+    }
+    h += '<form class="card" data-form="sales">' + (os.count ? "<h2>Other sales</h2>" : "") +
       (D.sales[U.day] ? '<p class="muted" style="margin:0">Already filled. Change any number and press Save.</p>' : "") +
       '<label for="orders">How many orders?</label>' +
       '<input type="text" inputmode="numeric" autocomplete="off" placeholder="0" id="orders" name="orders" value="' + (e.orders != null ? esc(e.orders) : "") + '">' +
@@ -491,6 +551,25 @@ tfoot td { font-weight: 800; border-bottom: 0; }
 
   V.settings = function () {
     var h = "<h1>💾 Backup &amp; settings</h1>" + flashHtml();
+    h += '<div class="card" id="share"><h2>🔗 Share orders with other phones</h2>';
+    if (!D.code) {
+      h += "<p>Every phone with the same <strong>kitchen code</strong> gets a notification for each new order, and the order is added to its totals.</p>" +
+        '<p class="muted small">First phone: tap “Create kitchen code”. Other phones: type the same code below.</p>' +
+        '<button type="button" class="btn big" data-act="newcode">✨ Create kitchen code</button>' +
+        '<form data-form="joincode"><label for="joincode">Or type the kitchen code from the first phone</label>' +
+        '<input type="text" id="joincode" name="code" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="abcd-efgh-jkmn">' +
+        '<button class="btn big go" type="submit">✓ Join</button></form>';
+    } else {
+      h += '<p style="margin-top:0">Kitchen code (type this on the other phones):</p><div class="code">' + esc(D.code) + "</div>" + netLine() +
+        '<form data-form="phonename"><label for="phonename">This phone’s name <span class="hint">Shown with orders, e.g. Papa, Counter, Kitchen</span></label>' +
+        '<input type="text" id="phonename" name="phonename" value="' + esc(D.phoneName) + '"><button class="btn big" type="submit">✓ Save name</button></form>';
+      if (window.KitchenApp && window.KitchenApp.keepAlertsOn) {
+        h += '<p class="muted small">If order notifications stop coming, tap below and choose “Allow” / “Don’t optimise”.</p>' +
+          '<button type="button" class="btn light" data-act="keepalerts">🔔 Keep order alerts on</button>';
+      }
+      h += '<div class="footer">' + removeBtn("code:x", "Stop sharing on this phone") + "</div>";
+    }
+    h += "</div>";
     h += '<div class="card"><h2>Backup</h2><p>Everything is kept only on this phone. Make a backup <strong>every week</strong> and send it to yourself on WhatsApp or Gmail.</p>' +
       '<p class="muted">Last backup: ' + (D.lastBackup ? esc(nice(D.lastBackup)) : "never") + "</p>" +
       '<button type="button" class="btn big go" data-act="backup">💾 Make backup now</button></div>';
@@ -508,16 +587,261 @@ tfoot td { font-weight: 800; border-bottom: 0; }
     return h;
   };
 
+  // ---------- orders
+  function orderLine(n, v) {
+    v = v || {};
+    return '<div class="oline" data-line="' + n + '">' +
+      '<label for="iname' + n + '">Item</label><input type="text" id="iname' + n + '" name="iname" list="menu" autocomplete="off" value="' + esc(v.name || "") + '">' +
+      '<div class="oline-row"><div><label for="iqty' + n + '">How many</label><input type="text" inputmode="numeric" id="iqty' + n + '" name="iqty" value="' + esc(v.qty || 1) + '"></div>' +
+      '<div><label for="iprice' + n + '">Price for 1</label><div class="cur"><span>₹</span><input type="text" inputmode="decimal" id="iprice' + n + '" name="iprice" placeholder="0" value="' + (v.price ? esc(v.price) : "") + '"></div></div>' +
+      '<button type="button" class="btn red sm" data-act="delline" aria-label="Remove this item">✕</button></div>' +
+      '<div class="lineamt muted">= ₹0</div></div>';
+  }
+  var lineNo = 0;
+  function addLine(v) {
+    var box = document.getElementById("lines");
+    if (!box) return;
+    box.insertAdjacentHTML("beforeend", orderLine(++lineNo, v));
+    orderTotals();
+  }
+  function readLines() {
+    return Array.prototype.map.call(document.querySelectorAll("#lines .oline"), function (el) {
+      return { el: el, name: el.querySelector("[name=iname]").value.trim(), qtyText: el.querySelector("[name=iqty]").value,
+        priceText: el.querySelector("[name=iprice]").value };
+    });
+  }
+  function orderTotals() {
+    var total = 0;
+    readLines().forEach(function (l) {
+      var qn = Number(String(l.qtyText).replace(/,/g, "")) || 0, pr = Number(String(l.priceText).replace(/,/g, "")) || 0;
+      l.el.querySelector(".lineamt").textContent = qn && pr ? q(qn) + " × " + rs(pr) + " = " + rs(qn * pr) : "";
+      total += qn * pr;
+    });
+    var t = document.getElementById("ototal");
+    if (t) t.textContent = rs(Math.round(total * 100) / 100);
+  }
+  V.order = function () {
+    var menu = Object.keys(D.prices).map(function (k) { return '<option value="' + esc(D.prices[k].name) + '">'; }).join("");
+    return "<h1>🛎️ New Order</h1>" + flashHtml() + '<form class="card" data-form="order" id="orderform">' +
+      '<label for="cname">Customer name <span class="hint">Optional</span></label><input type="text" id="cname" name="cname" autocomplete="off">' +
+      '<label for="cmobile">Mobile number <span class="hint">Optional</span></label><input type="tel" inputmode="tel" id="cmobile" name="cmobile" autocomplete="off" maxlength="15">' +
+      '<span class="label">What did they order?</span><datalist id="menu">' + menu + '</datalist><div id="lines" class="stack"></div>' +
+      '<button type="button" class="btn light" style="margin-top:10px" data-act="addline">➕ Add another item</button>' +
+      '<div class="ordertotal"><span>Total</span><span id="ototal">₹0</span></div>' +
+      '<span class="label">Payment</span><div class="choices two">' +
+      '<input type="radio" name="paid" id="paidyes" value="yes" checked><label for="paidyes"><span class="icon" aria-hidden="true">💵</span>Paid now</label>' +
+      '<input type="radio" name="paid" id="paidno" value="no"><label for="paidno"><span class="icon" aria-hidden="true">⏳</span>Will pay later</label></div>' +
+      '<label for="onote">Note <span class="hint">Optional, e.g. “less spicy”, address</span></label><input type="text" id="onote" name="onote" autocomplete="off">' +
+      '<button class="btn big go" type="submit">✓ Save order</button></form>';
+  };
+  V.orderAfter = function () { lineNo = 0; addLine(); };
+
+  var UNDO_MS = 2 * 60 * 1000;
+  function itemsText(o) { return (o.items || []).map(function (i) { return q(i.qty) + "× " + i.name; }).join(", "); }
+  V.orders = function () {
+    var list = ordersOn(U.day), st = orderStats(list), now = Date.now();
+    var h = "<h1>📋 Orders: " + esc(nice(U.day)) + "</h1>" + dayPicker() + flashHtml() + netLine();
+    var recent = U.lastOrder && D.orders[U.lastOrder];
+    if (recent && recent.status === "ok" && now - recent.at < UNDO_MS) {
+      h += '<div class="flash ok">Order saved ✅ ' + esc(recent.name || "Customer") + " · " + rs(recent.total) +
+        '<div class="row" style="margin-top:8px"><button type="button" class="btn red" data-act="undo" data-id="' + recent.id + '">↩️ Undo this order</button></div></div>';
+    }
+    h += '<button type="button" class="btn take go" data-go="order">🛎️ Take an order</button>';
+    h += '<div class="stats" style="margin-top:14px">' + stat("Orders", q(st.count)) + stat("Total", rs(st.total)) + stat("Paid", rs(st.paid)) + stat("To come", rs(st.unpaid)) + "</div>";
+    if (!list.length) return h + '<p class="muted">No orders yet for ' + esc(nice(U.day).toLowerCase()) + ".</p>";
+    h += '<ul class="list" style="margin-top:14px">' + list.map(function (o) {
+      var gone = o.status !== "ok", time = new Date(o.at).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" });
+      var b = '<li class="order' + (gone ? " gone" : "") + '"><div><div class="what">' + esc(o.name || "Customer") + " · " + rs(o.total) +
+        (gone ? '<span class="badge gone">Cancelled</span>' : o.paid ? '<span class="badge paid">Paid</span>' : '<span class="badge later">Pay later</span>') + "</div>" +
+        '<div class="items">' + esc(itemsText(o)) + "</div>" +
+        '<div class="muted small">' + esc(time) + (o.mobile ? ' · <a class="tel" href="tel:' + esc(o.mobile) + '">📞 ' + esc(o.mobile) + "</a>" : "") +
+        (o.by ? " · by " + esc(o.by) : "") + (o.note ? " · " + esc(o.note) : "") + "</div></div>";
+      if (!gone) {
+        b += '<div class="row">';
+        if (!o.paid) b += '<button type="button" class="btn go sm" data-act="gotpaid" data-id="' + o.id + '">✓ Got payment</button>';
+        b += now - o.at < UNDO_MS ? '<button type="button" class="btn red sm" data-act="undo" data-id="' + o.id + '">↩️ Undo</button>'
+          : removeBtn("order:" + o.id, "Cancel order");
+        b += "</div>";
+      }
+      return b + "</li>";
+    }).join("") + "</ul>";
+    return h;
+  };
+
+  // ---------- sharing orders between phones
+  // Each order / cancel is sealed with the kitchen code (AES-GCM, key from PBKDF2) and posted to a
+  // private topic on an ntfy server. Other phones read the topic, open the message with the same code
+  // and add it to their own book. The Android app also listens in the background to show notifications.
+  var te = new TextEncoder(), td8 = new TextDecoder(), keyCache = {};
+  function b64(bytes) { var s = ""; for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]); return btoa(s); }
+  function unb64(s) { var bin = atob(s), b = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) b[i] = bin.charCodeAt(i); return b; }
+  async function keyFor(code) {
+    if (keyCache[code]) return keyCache[code];
+    var base = await crypto.subtle.importKey("raw", te.encode(code), "PBKDF2", false, ["deriveKey"]);
+    var key = await crypto.subtle.deriveKey({ name: "PBKDF2", salt: te.encode("kitchen-book-v1"), iterations: 100000, hash: "SHA-256" },
+      base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+    var h = new Uint8Array(await crypto.subtle.digest("SHA-256", te.encode("topic:" + code)));
+    var topic = "kb-" + Array.prototype.map.call(h.slice(0, 16), function (x) { return x.toString(16).padStart(2, "0"); }).join("");
+    return (keyCache[code] = { key: key, topic: topic });
+  }
+  async function seal(code, obj) {
+    var k = await keyFor(code), iv = crypto.getRandomValues(new Uint8Array(12));
+    var ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, k.key, te.encode(JSON.stringify(obj))));
+    var all = new Uint8Array(12 + ct.length); all.set(iv); all.set(ct, 12);
+    return "KB1:" + b64(all);
+  }
+  async function unseal(code, text) {
+    if (!text || text.indexOf("KB1:") !== 0) return null;
+    try {
+      var k = await keyFor(code), all = unb64(text.slice(4));
+      return JSON.parse(td8.decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: all.slice(0, 12) }, k.key, all.slice(12))));
+    } catch (e) { return null; }
+  }
+  window.kbSeal = seal; window.kbUnseal = unseal;   // used by the test page only
+  function server() { return String(D.server || "https://ntfy.sh").replace(/\/+$/, ""); }
+  var net = { state: "idle" };
+  function netLine() {
+    if (!D.code) return "";
+    var n = D.outbox.length;
+    if (n) return '<div class="netline off">📴 ' + n + " update" + (n === 1 ? "" : "s") + " waiting for internet. They will be sent automatically.</div>";
+    if (net.state === "off") return '<div class="netline off">📴 No internet. New orders are saved here and sent later.</div>';
+    return '<div class="netline ok">🔗 Sharing orders with other phones</div>';
+  }
+  function bridgeSetup() {
+    if (window.KitchenApp && window.KitchenApp.setup) {
+      try { window.KitchenApp.setup(D.code || "", server(), D.deviceId); } catch (e) {}
+    }
+  }
+  function sendEvent(ev) {
+    if (!D.code) return;
+    ev.from = D.deviceId; ev.by = D.phoneName || ""; ev.at = ev.at || Date.now();
+    D.outbox.push(ev); save(); flush();
+  }
+  function applyEvent(ev) {
+    if (!ev || !ev.t || !ev.id) return false;
+    var o = D.orders[ev.id];
+    if (ev.t === "order") {
+      if (!ev.o) return false;
+      if (!o) { D.orders[ev.id] = ev.o; return true; }
+      if (o.ghost) { var keep = o.status; D.orders[ev.id] = ev.o; D.orders[ev.id].status = keep; return true; }
+      return false;
+    }
+    if (!o) {   // a cancel that arrived before its order: remember it
+      if (ev.t === "paid") return false;
+      D.orders[ev.id] = { id: ev.id, ghost: true, status: ev.t === "undo" ? "deleted" : "cancelled", date: ev.date || today(), at: ev.at || Date.now(), items: [], total: 0 };
+      return true;
+    }
+    if (ev.t === "undo" && o.status !== "deleted") { o.status = "deleted"; return true; }
+    if (ev.t === "cancel" && o.status === "ok") { o.status = "cancelled"; return true; }
+    if (ev.t === "paid" && !o.paid) { o.paid = true; return true; }
+    return false;
+  }
+  var flushing = false, polling = false;
+  async function flush() {
+    if (flushing || !D.code || !D.outbox.length) return;
+    flushing = true;
+    try {
+      var k = await keyFor(D.code);
+      while (D.outbox.length) {
+        var body = await seal(D.code, D.outbox[0]);
+        var r = await fetch(server() + "/" + k.topic, { method: "POST", body: body });
+        if (!r.ok) throw new Error("send " + r.status);
+        D.outbox.shift(); save();
+      }
+      net.state = "ok";
+    } catch (e) { net.state = "off"; }
+    finally { flushing = false; softRender(); }
+  }
+  async function poll() {
+    if (polling || !D.code) return;
+    polling = true;
+    var changed = false;
+    try {
+      // events the Android app already received in the background
+      if (window.KitchenApp && window.KitchenApp.takeInbox) {
+        var inbox = [];
+        try { inbox = JSON.parse(window.KitchenApp.takeInbox() || "[]"); } catch (e) {}
+        inbox.forEach(function (ev) { if (applyEvent(ev)) changed = true; });
+      }
+      var k = await keyFor(D.code);
+      var r = await fetch(server() + "/" + k.topic + "/json?poll=1&since=" + encodeURIComponent(D.sync.last || "12h"));
+      if (!r.ok) throw new Error("poll " + r.status);
+      var lines = (await r.text()).split("\n");
+      for (var i = 0; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        var m = JSON.parse(lines[i]);
+        if (m.event !== "message") continue;
+        D.sync.last = m.id;
+        if (applyEvent(await unseal(D.code, m.message))) changed = true;
+      }
+      net.state = "ok";
+    } catch (e) { net.state = "off"; }
+    finally {
+      polling = false; save();
+      if (changed) say("ok", "New orders from other phones added ✅");
+      softRender(changed);
+    }
+  }
+  // Re-draw for new data, but never while someone is typing in a form.
+  function softRender(force) {
+    if (U.dirty) return;
+    if (force || U.view === "orders" || U.view === "settings") render();
+  }
+  function syncNow() { flush(); poll(); }
+  window.addEventListener("online", syncNow);
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) syncNow(); });
+  setInterval(syncNow, 30000);
+  setInterval(function () { if (U.view === "orders" && !U.dirty) render(); }, 30000);   // hides Undo after 2 minutes
+  function makeCode() {
+    var abc = "abcdefghjkmnpqrstuvwxyz23456789", out = "", r = crypto.getRandomValues(new Uint8Array(12));
+    for (var i = 0; i < 12; i++) { out += abc[r[i] % abc.length]; if (i === 3 || i === 7) out += "-"; }
+    return out;
+  }
+  function setCode(code) {
+    D.code = code; D.sync = { last: null }; D.outbox = []; keyCache = {};
+    save(); bridgeSetup(); syncNow();
+  }
+
   // ---------- render
   function render() {
     document.getElementById("homeBtn").hidden = U.view === "home";
     document.getElementById("kname").textContent = "🍳 " + D.kitchen;
     app.innerHTML = V[U.view]();
+    if (V[U.view + "After"]) V[U.view + "After"]();
   }
 
   // ---------- saving forms
   function base() { return { at: Date.now() }; }
   var forms = {
+    order: function (f) {
+      var items = [];
+      readLines().forEach(function (l) {
+        if (!l.name && !String(l.priceText).trim()) return;
+        if (!l.name) throw new Error("Please type the item name, or remove the empty row with ✕.");
+        var qty = num(l.qtyText, "How many", true), price = num(l.priceText, "Price for 1");
+        if (qty < 1) throw new Error("“How many” for " + l.name + " must be at least 1.");
+        items.push({ name: l.name, qty: qty, price: price });
+      });
+      if (!items.length) throw new Error("Please type what the customer ordered.");
+      var total = Math.round(items.reduce(function (s, i) { return s + i.qty * i.price; }, 0) * 100) / 100;
+      var mobile = f.cmobile.value.replace(/[^0-9+]/g, "");
+      if (mobile && mobile.replace(/\D/g, "").length < 10) throw new Error("The mobile number looks too short. Please check it.");
+      var o = { id: newId(), date: today(), at: Date.now(), name: f.cname.value.trim(), mobile: mobile, items: items, total: total,
+        paid: f.querySelector("input[name=paid]:checked").value === "yes", note: f.onote.value.trim(), status: "ok", by: D.phoneName || "" };
+      items.forEach(function (i) { if (i.price) D.prices[i.name.toLowerCase()] = { name: i.name, price: i.price }; });
+      D.orders[o.id] = o; save();
+      sendEvent({ t: "order", id: o.id, o: o });
+      U.lastOrder = o.id;
+      go("orders");
+    },
+    joincode: function (f) {
+      var code = f.code.value.toLowerCase().replace(/\s+/g, "").replace(/[^a-z0-9-]/g, "");
+      if (!/^[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/.test(code)) throw new Error("The code looks like abcd-efgh-jkmn (3 groups of 4). Please check it.");
+      setCode(code); say("ok", "Joined ✅ This phone now gets orders from the other phones."); go("settings");
+    },
+    phonename: function (f) {
+      D.phoneName = f.phonename.value.trim(); save(); say("ok", "Saved ✅"); go("settings");
+    },
     sales: function (f) {
       D.sales[U.day] = { date: U.day, orders: num(f.orders.value, "How many orders?", true), sales: num(f.sales.value, "Total sales"),
         received: num(f.received.value, "Money received"), toCome: num(f.toCome.value, "Money still to come"), notes: f.notes.value.trim(), at: Date.now() };
@@ -577,11 +901,42 @@ tfoot td { font-weight: 800; border-bottom: 0; }
 
   // ---------- buttons
   var acts = {
+    addline: function () { addLine(); var all = document.querySelectorAll("#lines [name=iname]"); if (all.length) all[all.length - 1].focus(); },
+    delline: function (b) {
+      var line = b.closest(".oline");
+      if (document.querySelectorAll("#lines .oline").length > 1) line.remove();
+      else Array.prototype.forEach.call(line.querySelectorAll("input"), function (i) { i.value = i.name === "iqty" ? "1" : ""; });
+      orderTotals();
+    },
+    undo: function (b) {
+      var o = D.orders[b.dataset.id];
+      if (!o) return;
+      o.status = "deleted"; save();
+      sendEvent({ t: "undo", id: o.id, date: o.date, name: o.name, total: o.total });
+      U.lastOrder = null;
+      say("ok", "Order removed ↩️ " + (o.name || "Customer") + " · " + rs(o.total));
+      go("orders", { day: o.date });
+    },
+    gotpaid: function (b) {
+      var o = D.orders[b.dataset.id];
+      if (!o) return;
+      o.paid = true; save();
+      sendEvent({ t: "paid", id: o.id });
+      say("ok", "Payment noted ✅ " + rs(o.total)); go("orders", { day: o.date });
+    },
+    newcode: function () { setCode(makeCode()); say("ok", "Kitchen code made ✅ Now type this code on the other phones."); go("settings"); },
+    keepalerts: function () { if (window.KitchenApp && window.KitchenApp.keepAlertsOn) window.KitchenApp.keepAlertsOn(); },
     remove: function (b) {
       var key = b.dataset.key;
       if (U.armed !== key) { U.armed = key; render(); return; }
       U.armed = null;
       var i = key.indexOf(":"), kind = key.slice(0, i), id = key.slice(i + 1);
+      if (kind === "order") {
+        var o = D.orders[id];
+        if (o) { o.status = "cancelled"; save(); sendEvent({ t: "cancel", id: id, date: o.date, name: o.name, total: o.total }); say("ok", "Order cancelled."); go("orders", { day: o.date }); }
+        return;
+      }
+      if (kind === "code") { setCode(""); say("ok", "This phone stopped sharing orders."); go("settings"); return; }
       if (kind === "sales") { delete D.sales[id]; save(); say("ok", "Removed sales for " + nice(id).toLowerCase()); go("sales", { day: id }); return; }
       if (kind === "spent") { D.spent = D.spent.filter(function (x) { return x.id !== id; }); save(); say("ok", "Removed."); go("spent", { day: U.day }); return; }
       if (kind === "buy") { D.buy = D.buy.filter(function (x) { return x.id !== id; }); save(); say("ok", "Removed from the list."); go("buy"); return; }
@@ -612,7 +967,8 @@ tfoot td { font-weight: 800; border-bottom: 0; }
       render();
     },
     restoreyes: function () {
-      D = fix(U.restore); U.restore = null; save();
+      var me = D.deviceId;
+      D = fix(U.restore); D.deviceId = me; D.outbox = []; U.restore = null; save(); bridgeSetup();
       say("ok", "Backup brought back ✅"); go("home");
     },
     restoreno: function () { U.restore = null; render(); }
@@ -629,8 +985,8 @@ tfoot td { font-weight: 800; border-bottom: 0; }
   document.addEventListener("click", function (e) {
     var b = e.target.closest("[data-go],[data-act],[data-day]");
     if (!b) return;
-    if (b.dataset.go) { go(b.dataset.go, { id: b.dataset.id, day: b.dataset.day }); return; }
-    if (b.dataset.day) { go(U.view, { day: b.dataset.day }); return; }
+    if (b.dataset.go) { U.flash = null; go(b.dataset.go, { id: b.dataset.id, day: b.dataset.day }); return; }
+    if (b.dataset.day) { U.flash = null; go(U.view, { day: b.dataset.day }); return; }
     var fn = acts[b.dataset.act];
     if (fn) { try { fn(b); } catch (err) { say("bad", err.message || "Something went wrong."); render(); } }
   });
@@ -639,6 +995,15 @@ tfoot td { font-weight: 800; border-bottom: 0; }
     if (!f) return;
     e.preventDefault();
     try { forms[f.dataset.form](f, e.submitter); } catch (err) { showError(f, err); }
+  });
+  document.addEventListener("input", function (e) {
+    if (e.target.closest("form")) U.dirty = true;
+    if (!e.target.closest("#orderform")) return;
+    if (e.target.name === "iname") {
+      var known = D.prices[e.target.value.trim().toLowerCase()], line = e.target.closest(".oline"), pr = line.querySelector("[name=iprice]");
+      if (known && !pr.value) pr.value = known.price;
+    }
+    orderTotals();
   });
   document.addEventListener("change", function (e) {
     if (e.target.id === "pickday" && e.target.value) { go(U.view, { day: e.target.value > today() ? today() : e.target.value }); return; }
@@ -657,6 +1022,8 @@ tfoot td { font-weight: 800; border-bottom: 0; }
   });
 
   render();
+  bridgeSetup();
+  syncNow();
 })();
 </script>
 </body>

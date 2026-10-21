@@ -1,10 +1,15 @@
 package com.kitchenbook.app;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -125,6 +130,49 @@ public class MainActivity extends Activity {
     }
 
     private class Bridge {
+        /** Called by the screens with the kitchen code (empty = not sharing) and this phone's id. */
+        @JavascriptInterface
+        public void setup(String code, String server, String deviceId) {
+            SharedPreferences p = getSharedPreferences(OrderAlertService.PREFS, MODE_PRIVATE);
+            SharedPreferences.Editor e = p.edit();
+            if (!code.equals(p.getString("code", ""))) e.putString("last", "");
+            e.putString("code", code).putString("server", server).putString("device", deviceId).apply();
+            runOnUiThread(() -> {
+                if (code.isEmpty()) {
+                    OrderAlertService.stop(MainActivity.this);
+                    return;
+                }
+                if (Build.VERSION.SDK_INT >= 33
+                        && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                    requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 2);
+                }
+                try {
+                    OrderAlertService.start(MainActivity.this);
+                } catch (Exception ignored) {
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public String takeInbox() {
+            return OrderAlertService.takeInbox(MainActivity.this);
+        }
+
+        /** Asks Android not to stop the order listener to save battery. */
+        @JavascriptInterface
+        public void keepAlertsOn() {
+            runOnUiThread(() -> {
+                try {
+                    startActivity(new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:" + getPackageName())));
+                } catch (Exception e) {
+                    try {
+                        startActivity(new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS));
+                    } catch (Exception ignored) {
+                    }
+                }
+            });
+        }
+
         @JavascriptInterface
         public void shareText(String text) {
             Intent send = new Intent(Intent.ACTION_SEND);
