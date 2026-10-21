@@ -167,7 +167,9 @@ What it does:
 - **📤 Send report** shares today's or the month's totals on WhatsApp.
 - **💾 Backup** makes a file to send to yourself; **Bring back a backup** restores it on a new phone.
 
-- **🛎️ Take an order**: customer name and mobile (both optional), items with quantity and price, automatic
+- **🛎️ Take an order**: customer name and mobile (both optional), then search the menu or tap a category and
+  tap a size (Qtr / Half / Full) to add a dish; − / + changes how many. The full Swadishtam menu is in
+  `android/app/src/main/assets/menu.js`, and prices can be changed in the app under **📖 Menu**. Automatic
   total, paid now / pay later. **↩️ Undo** for 2 minutes, **Cancel order** after that, **✓ Got payment** for pay-later.
   Orders are added to the day's and month's totals automatically.
 
