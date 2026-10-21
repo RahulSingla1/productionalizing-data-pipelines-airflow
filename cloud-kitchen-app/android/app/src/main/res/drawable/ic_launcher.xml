@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Orange square with a white cooking pot. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:fillColor="#D9480F" android:pathData="M20,0h68a20,20 0 0 1 20,20v68a20,20 0 0 1 -20,20h-68a20,20 0 0 1 -20,-20v-68a20,20 0 0 1 20,-20z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M28,50h52v14a16,16 0 0 1 -16,16h-20a16,16 0 0 1 -16,-16z" />
+    <path android:fillColor="#FFD8A8" android:pathData="M22,46h64a3,3 0 0 1 0,6h-64a3,3 0 0 1 0,-6z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M48,36h12a3,3 0 0 1 0,6h-12a3,3 0 0 1 0,-6z" />
+</vector>

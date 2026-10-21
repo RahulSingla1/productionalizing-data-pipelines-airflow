@@ -1,0 +1,663 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#d9480f">
+<title>Kitchen Book</title>
+<style>
+/* Kitchen Book: works fully offline. Everything is stored on this phone. */
+:root {
+  --bg: #fbf8f4; --card: #ffffff; --fg: #1d1a17; --muted: #6c645b; --line: #e6dccf;
+  --brand: #d9480f; --brand-ink: #ffffff; --brand-soft: #fff0e6;
+  --ok: #1d7a36; --ok-bg: #e4f4e8; --bad: #c0262d; --bad-bg: #fcebec; --focus: #d9480f;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Noto Sans Devanagari", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #171412; --card: #221e1b; --fg: #f3ede6; --muted: #b3a89c; --line: #3a332d;
+    --brand: #f76707; --brand-ink: #1a0f08; --brand-soft: #3a2416;
+    --ok: #63c27f; --ok-bg: #18301f; --bad: #ff8087; --bad-bg: #3a1c1e; --focus: #ff922b;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html { font-size: 19px; -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font); line-height: 1.45; }
+[hidden] { display: none !important; }
+.top { position: sticky; top: 0; z-index: 5; background: var(--brand); color: var(--brand-ink);
+  display: flex; align-items: center; gap: 10px;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px)); }
+.top .name { flex: 1; font-weight: 800; font-size: 1.1rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.top button { font: inherit; font-weight: 700; color: var(--brand-ink); background: transparent;
+  border: 2px solid currentColor; border-radius: 12px; padding: 4px 14px; min-height: 44px; cursor: pointer; }
+main { max-width: 760px; margin: 0 auto;
+  padding: 16px max(16px, env(safe-area-inset-right, 0px)) calc(96px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+h1 { font-size: 1.6rem; line-height: 1.2; margin: 6px 0 2px; }
+h2 { font-size: 1.2rem; margin: 26px 0 10px; }
+.lead { color: var(--muted); margin: 0 0 8px; }
+.muted { color: var(--muted); }
+.small { font-size: .85rem; }
+.stack { display: grid; gap: 10px; }
+
+.flash { border-radius: 14px; padding: 12px 16px; margin: 12px 0; font-weight: 700; font-size: 1.05rem; }
+.flash.ok { background: var(--ok-bg); color: var(--ok); }
+.flash.bad { background: var(--bad-bg); color: var(--bad); }
+
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+@media (min-width: 640px) { .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.tile { font: inherit; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  text-align: center; min-height: 128px; padding: 12px; border-radius: 18px; background: var(--card); color: var(--fg);
+  border: 2px solid var(--line); font-weight: 700; font-size: 1.1rem; cursor: pointer; }
+.tile .icon { font-size: 2.4rem; line-height: 1.15; }
+.tile .state { font-size: .85rem; font-weight: 600; color: var(--muted); }
+.tile.todo { border-color: var(--bad); background: var(--bad-bg); }
+.tile.todo .state { color: var(--bad); }
+.tile.done { border-color: var(--ok); background: var(--ok-bg); }
+.tile.done .state { color: var(--ok); }
+.tile:active { transform: translateY(2px); }
+
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 16px 18px; margin: 14px 0; }
+.card h2:first-child { margin-top: 0; }
+label, .label { display: block; font-weight: 700; margin: 16px 0 6px; font-size: 1.05rem; }
+.hint { display: block; font-weight: 400; color: var(--muted); font-size: .85rem; }
+input[type=text], input[type=date], select, textarea {
+  width: 100%; font: inherit; font-size: 1.25rem; padding: 12px 14px; border: 2px solid var(--line); border-radius: 12px;
+  background: var(--bg); color: var(--fg); }
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.cur { position: relative; }
+.cur span { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 1.25rem; color: var(--muted); }
+.cur input { padding-left: 38px; }
+
+.btn { font: inherit; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 54px;
+  padding: 8px 20px; border-radius: 14px; border: 2px solid transparent; cursor: pointer; font-size: 1.12rem; font-weight: 700;
+  background: var(--brand); color: var(--brand-ink); text-decoration: none; }
+.btn.big { width: 100%; min-height: 62px; font-size: 1.3rem; margin-top: 18px; }
+.btn.go { background: var(--ok); color: var(--card); }
+.btn.light { background: var(--card); color: var(--fg); border-color: var(--line); }
+.btn.red { background: var(--card); color: var(--bad); border-color: var(--bad); }
+.btn.red.armed { background: var(--bad); color: var(--card); }
+.btn.sm { min-height: 44px; font-size: 1rem; padding: 4px 14px; }
+.btn.wa { background: #1f9d55; color: #fff; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.row > .grow { flex: 1 1 140px; min-width: 0; }
+
+.days { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0 4px; }
+.days button { font: inherit; font-weight: 700; padding: 10px; border-radius: 12px; border: 2px solid var(--line);
+  background: var(--card); color: var(--fg); cursor: pointer; min-height: 50px; }
+.days button.on { background: var(--brand); border-color: var(--brand); color: var(--brand-ink); }
+.otherday { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.otherday label { margin: 0; font-weight: 600; font-size: .95rem; white-space: nowrap; }
+.otherday input { font-size: 1.05rem; padding: 8px 10px; }
+
+.choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (min-width: 640px) { .choices { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.choices input { position: absolute; opacity: 0; pointer-events: none; }
+.choices label { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center;
+  padding: 12px 6px; border: 2px solid var(--line); border-radius: 14px; background: var(--bg); cursor: pointer; font-size: .95rem; }
+.choices label .icon { font-size: 1.8rem; }
+.choices input:checked + label { border-color: var(--brand); background: var(--brand-soft); box-shadow: inset 0 0 0 2px var(--brand); }
+
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  padding: 12px 14px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; }
+.list li > div { min-width: 0; }
+.list .what { font-weight: 700; }
+.list li.low { border-color: var(--bad); background: var(--bad-bg); }
+.list li.editing { border-color: var(--brand); box-shadow: inset 0 0 0 2px var(--brand); }
+
+.stock-row { display: grid; grid-template-columns: minmax(0, 1fr) 130px; gap: 12px; align-items: center;
+  padding: 12px 14px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; }
+.stock-row.low { border-color: var(--bad); background: var(--bad-bg); }
+.stock-row label { margin: 0; font-size: 1.1rem; }
+.stock-row input { text-align: center; padding: 10px; }
+.linkish { font: inherit; font-size: .85rem; color: var(--muted); background: none; border: 0; padding: 4px 0; text-decoration: underline; cursor: pointer; }
+
+.stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (min-width: 640px) { .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.stat { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; }
+.card .stat { background: var(--bg); }
+.stat .k { color: var(--muted); font-size: .85rem; font-weight: 600; }
+.stat .v { font-size: 1.3rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.pos { color: var(--ok); } .neg { color: var(--bad); }
+.month-nav { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; margin: 6px 0 12px; }
+.month-nav h1 { text-align: center; margin: 0; font-size: 1.4rem; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
+table { border-collapse: collapse; width: 100%; font-size: .95rem; font-variant-numeric: tabular-nums; }
+th, td { padding: 9px 12px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { font-size: .82rem; color: var(--muted); }
+tbody tr { cursor: pointer; }
+tr.miss td { color: var(--bad); }
+tfoot td { font-weight: 800; border-bottom: 0; }
+.footer { margin-top: 26px; display: flex; gap: 10px; flex-wrap: wrap; }
+.confirm { border: 2px solid var(--bad); }
+@media (prefers-reduced-motion: reduce) { .tile:active { transform: none; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="name" id="kname">🍳 Kitchen Book</div>
+  <button type="button" id="homeBtn" data-go="home" hidden>🏠 Home</button>
+</header>
+<main id="app"></main>
+
+<script>
+(function () {
+  "use strict";
+  var KEY = "kitchen-book-v1", PREV = "kitchen-book-v1-prev";
+  var CATS = [
+    ["Vegetables & Groceries", "🥕"], ["Meat & Dairy", "🥛"], ["Gas & Electricity", "🔥"],
+    ["Packaging", "📦"], ["Staff Salary", "👨‍🍳"], ["Rent", "🏠"],
+    ["Delivery & Commission", "🛵"], ["Repairs", "🔧"], ["Other", "📝"]
+  ];
+  var UNITS = ["kg", "g", "litre", "ml", "pieces", "packets", "dozen", "boxes"];
+  var app = document.getElementById("app");
+
+  // ---------- data (all on this phone)
+  function blank() { return { v: 1, kitchen: "My Cloud Kitchen", sales: {}, spent: [], items: [], buy: [], lastBackup: null }; }
+  function fix(d) { var b = blank(); for (var k in b) if (d[k] == null) d[k] = b[k]; return d; }
+  function load() {
+    try { var d = JSON.parse(localStorage.getItem(KEY) || "null"); if (d && d.v === 1) return fix(d); } catch (e) {}
+    try { var p = JSON.parse(localStorage.getItem(PREV) || "null"); if (p && p.v === 1) return fix(p); } catch (e) {}
+    return blank();
+  }
+  var D = load();
+  var storageOk = true;
+  function save() {
+    try {
+      var text = JSON.stringify(D);
+      var old = localStorage.getItem(KEY);
+      if (old) localStorage.setItem(PREV, old);   // keep the previous copy as a safety net
+      localStorage.setItem(KEY, text);
+      storageOk = true;
+    } catch (e) {
+      storageOk = false;
+      say("bad", "Could not save on this phone. The phone storage may be full.");
+    }
+  }
+
+  // ---------- helpers
+  var U = { view: "home", day: null, editId: null, flash: null, armed: null, month: null, restore: null };
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function iso(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+  function today() { return iso(new Date()); }
+  function addDays(s, n) { var p = s.split("-").map(Number); return iso(new Date(p[0], p[1] - 1, p[2] + n)); }
+  function asDate(s) { var p = s.split("-").map(Number); return new Date(p[0], p[1] - 1, p[2] || 1); }
+  function nice(s) {
+    if (s === today()) return "Today";
+    if (s === addDays(today(), -1)) return "Yesterday";
+    return asDate(s).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
+  }
+  function monthName(ym) { return asDate(ym + "-01").toLocaleDateString("en-IN", { month: "long", year: "numeric" }); }
+  function addMonths(ym, n) { var p = ym.split("-").map(Number); var d = new Date(p[0], p[1] - 1 + n, 1); return iso(d).slice(0, 7); }
+  function rs(n) { return "₹" + Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 }); }
+  function q(n) { return Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 }); }
+  function num(v, label, whole) {
+    v = String(v == null ? "" : v).replace(/,/g, "").trim();
+    if (v === "") return 0;
+    var n = Number(v);
+    if (!isFinite(n) || n < 0) throw new Error("Please type only numbers in “" + label + "”.");
+    return whole ? Math.round(n) : Math.round(n * 100) / 100;
+  }
+  function newId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function say(kind, text) { U.flash = [kind, text]; }
+  function flashHtml() { if (!U.flash) return ""; var f = U.flash; U.flash = null;
+    return '<div class="flash ' + f[0] + '" role="status">' + esc(f[1]) + "</div>"; }
+  function go(view, extra) {
+    extra = extra || {};
+    U.view = view; U.armed = null; U.restore = null;
+    U.editId = extra.id || null;
+    U.day = extra.day || (view === "sales" || view === "spent" ? today() : null);
+    if (view === "report") U.month = extra.month || U.month || today().slice(0, 7);
+    render(); window.scrollTo(0, 0);
+  }
+  window.appBack = function () { if (U.view !== "home") { go("home"); return true; } return false; };
+
+  // ---------- totals (worked out automatically)
+  function spentOn(d) { return D.spent.filter(function (x) { return x.date === d; }); }
+  function sum(list, f) { return list.reduce(function (s, x) { return s + Number(x[f] || 0); }, 0); }
+  function dayTotals(d) {
+    var s = D.sales[d] || {}, sp = spentOn(d);
+    return { filled: !!D.sales[d], orders: Number(s.orders || 0), sales: Number(s.sales || 0), received: Number(s.received || 0),
+      toCome: Number(s.toCome || 0), spent: sum(sp, "amount"), spentCount: sp.length, spentList: sp };
+  }
+  function monthTotals(ym) {
+    var t = { orders: 0, sales: 0, received: 0, toCome: 0, spent: 0, days: 0, cats: {} };
+    Object.keys(D.sales).forEach(function (d) {
+      if (d.slice(0, 7) !== ym) return;
+      var s = D.sales[d];
+      t.orders += Number(s.orders || 0); t.sales += Number(s.sales || 0);
+      t.received += Number(s.received || 0); t.toCome += Number(s.toCome || 0); t.days++;
+    });
+    D.spent.forEach(function (x) {
+      if (x.date.slice(0, 7) !== ym) return;
+      t.spent += Number(x.amount || 0); t.cats[x.cat] = (t.cats[x.cat] || 0) + Number(x.amount || 0);
+    });
+    t.profit = t.sales - t.spent;
+    return t;
+  }
+  function lowItems() { return D.items.filter(function (i) { return Number(i.qty) <= Number(i.low); }); }
+  function openBuy() { return D.buy.filter(function (b) { return b.status === "open"; }); }
+  function needToBuyNames() {
+    var names = openBuy().map(function (b) { return b.name; });
+    lowItems().forEach(function (i) { if (names.map(function (n) { return n.toLowerCase(); }).indexOf(i.name.toLowerCase()) < 0) names.push(i.name); });
+    return names;
+  }
+
+  // ---------- sharing and backup (Android app bridge, or the browser as a fallback)
+  function shareText(t) {
+    if (window.KitchenApp && window.KitchenApp.shareText) { window.KitchenApp.shareText(t); return; }
+    if (navigator.share) { navigator.share({ text: t }).catch(function () {}); return; }
+    window.open("https://wa.me/?text=" + encodeURIComponent(t), "_blank");
+  }
+  function shareFile(name, content) {
+    if (window.KitchenApp && window.KitchenApp.shareFile) { window.KitchenApp.shareFile(name, content); return; }
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([content], { type: "application/json" }));
+    a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  }
+  function dayReport(d) {
+    var t = dayTotals(d), m = monthTotals(d.slice(0, 7));
+    var lines = ["🍳 " + D.kitchen + " – " + asDate(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }), ""];
+    if (t.filled) {
+      lines.push("Orders: " + q(t.orders), "Sales: " + rs(t.sales), "Money received: " + rs(t.received), "Still to come: " + rs(t.toCome));
+    } else {
+      lines.push("Sales: not filled yet");
+    }
+    lines.push("Money spent: " + rs(t.spent));
+    t.spentList.forEach(function (x) { lines.push("  • " + x.cat + ": " + rs(x.amount) + (x.note ? " (" + x.note + ")" : "")); });
+    lines.push("Sales − spent: " + rs(t.sales - t.spent), "");
+    lines.push("This month so far: sales " + rs(m.sales) + ", spent " + rs(m.spent) + ", sales − spent " + rs(m.profit));
+    var buy = needToBuyNames();
+    if (buy.length) lines.push("", "🛒 Need to buy: " + buy.join(", "));
+    return lines.join("\n");
+  }
+  function monthReport(ym) {
+    var m = monthTotals(ym);
+    var lines = ["🍳 " + D.kitchen + " – " + monthName(ym), "",
+      "Orders: " + q(m.orders), "Sales: " + rs(m.sales), "Money received: " + rs(m.received),
+      "Still to come: " + rs(m.toCome), "Money spent: " + rs(m.spent), "Sales − spent: " + rs(m.profit)];
+    var cats = Object.keys(m.cats).sort(function (a, b) { return m.cats[b] - m.cats[a]; });
+    if (cats.length) { lines.push("", "Where the money went:"); cats.forEach(function (c) { lines.push("  • " + c + ": " + rs(m.cats[c])); }); }
+    lines.push("", "Days with sales filled: " + m.days);
+    return lines.join("\n");
+  }
+
+  // ---------- pieces
+  function moneyField(id, label, hint, val) {
+    return '<label for="' + id + '">' + esc(label) + (hint ? '<span class="hint">' + esc(hint) + "</span>" : "") + "</label>" +
+      '<div class="cur"><span>₹</span><input type="text" inputmode="decimal" autocomplete="off" placeholder="0" id="' + id +
+      '" name="' + id + '" value="' + (val ? esc(val) : "") + '"></div>';
+  }
+  function dayPicker() {
+    var t = today(), y = addDays(t, -1);
+    return '<div class="days"><button type="button" data-day="' + y + '" class="' + (U.day === y ? "on" : "") + '">Yesterday</button>' +
+      '<button type="button" data-day="' + t + '" class="' + (U.day === t ? "on" : "") + '">Today</button></div>' +
+      '<div class="otherday"><label for="pickday">Other day:</label><input type="date" id="pickday" max="' + t + '" value="' + U.day + '"></div>';
+  }
+  function tile(view, icon, label, done, state) {
+    var cls = done === true ? "done" : done === false ? "todo" : "";
+    return '<button type="button" class="tile ' + cls + '" data-go="' + view + '"><span class="icon" aria-hidden="true">' + icon +
+      "</span>" + esc(label) + '<span class="state">' + esc(state) + "</span></button>";
+  }
+  function removeBtn(key, label) {
+    var armed = U.armed === key;
+    return '<button type="button" class="btn red sm' + (armed ? " armed" : "") + '" data-act="remove" data-key="' + esc(key) + '">' +
+      (armed ? "Tap again to remove" : (label || "Remove")) + "</button>";
+  }
+  function stat(k, v, cls) { return '<div class="stat"><div class="k">' + esc(k) + '</div><div class="v ' + (cls || "") + '">' + esc(v) + "</div></div>"; }
+
+  // ---------- screens
+  var V = {};
+
+  V.home = function () {
+    var t = today(), td = dayTotals(t), m = monthTotals(t.slice(0, 7));
+    var stockDone = D.items.length > 0 && D.items.some(function (i) { return i.countedOn === t; });
+    var pending = [!td.filled, td.spentCount === 0, !stockDone].filter(Boolean).length;
+    var buyCount = needToBuyNames().length;
+    var h = "<h1>Namaste 🙏</h1>" +
+      '<p class="lead">' + esc(new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })) + "</p>" + flashHtml();
+    h += pending ? '<div class="flash bad">Please fill ' + pending + " thing" + (pending > 1 ? "s" : "") + " for today 👇</div>"
+      : '<div class="flash ok">Everything is filled for today. Thank you! 👍</div>';
+    h += '<div class="tiles">' +
+      tile("sales", "💰", "Today's Sales", td.filled, td.filled ? "✅ " + rs(td.sales) : "❌ Not filled") +
+      tile("spent", "🧾", "Money Spent", td.spentCount > 0, td.spentCount ? "✅ " + rs(td.spent) : "❌ Nothing added") +
+      tile("stock", "📦", "Stock Left", stockDone, stockDone ? "✅ Updated" : "❌ Not updated") +
+      tile("buy", "🛒", "Need to Buy", null, buyCount + " item" + (buyCount === 1 ? "" : "s")) +
+      tile("report", "📊", "Reports", null, "Totals") +
+      tile("settings", "💾", "Backup", null, D.lastBackup ? "Last: " + nice(D.lastBackup) : "Not done yet") +
+      "</div>";
+    h += '<div class="card"><h2>Today’s totals</h2><div class="stats">' +
+      stat("Sales", rs(td.sales)) + stat("Received", rs(td.received)) + stat("Spent", rs(td.spent)) +
+      stat("Sales − spent", rs(td.sales - td.spent), td.sales - td.spent >= 0 ? "pos" : "neg") + "</div>" +
+      '<p class="muted" style="margin-bottom:0">This month: sales <strong>' + rs(m.sales) + "</strong>, spent <strong>" + rs(m.spent) +
+      "</strong>, sales − spent <strong class=\"" + (m.profit >= 0 ? "pos" : "neg") + '">' + rs(m.profit) + "</strong></p>" +
+      '<button type="button" class="btn big wa" data-act="sharetoday">📤 Send today’s report</button></div>';
+    if (!D.lastBackup || D.lastBackup < addDays(t, -7)) {
+      h += '<div class="flash bad">💾 Please make a backup. If this phone is lost or reset, everything is lost. <button type="button" class="btn sm" data-go="settings">Back up now</button></div>';
+    }
+    return h;
+  };
+
+  V.sales = function () {
+    var e = D.sales[U.day] || {};
+    var h = "<h1>💰 Sales: " + esc(nice(U.day)) + "</h1>" + dayPicker() + flashHtml() +
+      '<form class="card" data-form="sales">' +
+      (D.sales[U.day] ? '<p class="muted" style="margin:0">Already filled. Change any number and press Save.</p>' : "") +
+      '<label for="orders">How many orders?</label>' +
+      '<input type="text" inputmode="numeric" autocomplete="off" placeholder="0" id="orders" name="orders" value="' + (e.orders != null ? esc(e.orders) : "") + '">' +
+      moneyField("sales", "Total sales", "Full value of all orders", e.sales) +
+      moneyField("received", "Money received", "Cash + UPI + card actually in hand or bank", e.received) +
+      moneyField("toCome", "Money still to come", "From Swiggy / Zomato / customers who pay later", e.toCome) +
+      '<label for="notes">Anything to remember? <span class="hint">Optional</span></label>' +
+      '<textarea id="notes" name="notes" rows="2">' + esc(e.notes || "") + "</textarea>" +
+      '<button class="btn big go" type="submit">✓ Save</button></form>';
+    if (D.sales[U.day]) h += '<div class="footer">' + removeBtn("sales:" + U.day, "🗑 Remove this day’s sales") + "</div>";
+    return h;
+  };
+
+  V.spent = function () {
+    var editing = U.editId ? D.spent.find(function (x) { return x.id === U.editId; }) : null;
+    var cats = CATS.map(function (c, i) {
+      return '<input type="radio" name="cat" id="cat' + i + '" value="' + esc(c[0]) + '"' + (editing && editing.cat === c[0] ? " checked" : "") +
+        '><label for="cat' + i + '"><span class="icon" aria-hidden="true">' + c[1] + "</span>" + esc(c[0]) + "</label>"; }).join("");
+    var list = spentOn(U.day).sort(function (a, b) { return (b.at || 0) - (a.at || 0); });
+    var h = "<h1>🧾 Money Spent: " + esc(nice(U.day)) + "</h1>" + dayPicker() + flashHtml() +
+      '<form class="card" data-form="spent">' + (editing ? '<p class="flash ok" style="margin:0">Changing an entry. Fix it and press Save.</p>' : "") +
+      moneyField("amount", "How much money?", "", editing ? editing.amount : "") +
+      '<span class="label">Spent on what? <span class="hint">Tap one</span></span><div class="choices">' + cats + "</div>" +
+      '<label for="note">Details <span class="hint">Optional, e.g. “10 kg onion from Ramesh”</span></label>' +
+      '<input type="text" id="note" name="note" autocomplete="off" value="' + esc(editing ? editing.note : "") + '">' +
+      '<button class="btn big go" type="submit">' + (editing ? "✓ Save changes" : "✓ Add") + "</button>" +
+      (editing ? '<button class="btn big light" type="button" data-go="spent" data-day="' + U.day + '">Cancel</button>' : "") + "</form>";
+    h += "<h2>Already added: " + rs(sum(list, "amount")) + "</h2>";
+    if (!list.length) return h + '<p class="muted">Nothing added yet.</p>';
+    return h + '<ul class="list">' + list.map(function (x) {
+      return '<li class="' + (x.id === U.editId ? "editing" : "") + '"><div><div class="what">' + rs(x.amount) + " · " + esc(x.cat) + "</div>" +
+        (x.note ? '<div class="muted small">' + esc(x.note) + "</div>" : "") + '</div><div class="row">' +
+        '<button type="button" class="btn light sm" data-go="spent" data-day="' + x.date + '" data-id="' + x.id + '">✏️ Change</button>' +
+        removeBtn("spent:" + x.id) + "</div></li>"; }).join("") + "</ul>";
+  };
+
+  V.stock = function () {
+    var h = "<h1>📦 Stock Left</h1>" + flashHtml();
+    if (!D.items.length) {
+      return h + '<div class="card"><p style="margin-top:0"><strong>No items yet.</strong></p>' +
+        "<p>Add the things you keep in the kitchen, like Onion, Oil, Rice, Paneer. Then come here every day and type how much is left.</p>" +
+        '<button class="btn big" type="button" data-go="stocknew">➕ Add first item</button></div>';
+    }
+    var t = today();
+    var items = D.items.slice().sort(function (a, b) { return a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1; });
+    h += '<p class="lead">Check the kitchen and type how much is left now. Leave a box empty if it hasn\'t changed.</p>' +
+      '<form data-form="stock" class="stack">' + items.map(function (i) {
+        var low = Number(i.qty) <= Number(i.low);
+        return '<div class="stock-row' + (low ? " low" : "") + '"><div><label for="q_' + i.id + '">' + esc(i.name) + "</label>" +
+          '<div class="muted small">Last count: ' + q(i.qty) + " " + esc(i.unit) + (i.countedOn === t ? " · ✅ today" : "") +
+          (low ? ' · <strong style="color:var(--bad)">running low</strong>' : "") + "</div>" +
+          '<button type="button" class="linkish" data-go="stockedit" data-id="' + i.id + '">✏️ change item</button></div>' +
+          '<div><input type="text" inputmode="decimal" autocomplete="off" id="q_' + i.id + '" name="' + i.id + '" placeholder="' + q(i.qty) + '">' +
+          '<div class="muted small" style="text-align:center">' + esc(i.unit) + "</div></div></div>";
+      }).join("") + '<button class="btn big go" type="submit">✓ Save stock</button></form>' +
+      '<div class="footer"><button type="button" class="btn light" data-go="stocknew">➕ Add new item</button>' +
+      '<button type="button" class="btn light" data-go="buy">🛒 Need to buy</button></div>';
+    return h;
+  };
+
+  function unitSelect(sel) {
+    return '<select id="unit" name="unit">' + UNITS.map(function (u) { return "<option" + (u === sel ? " selected" : "") + ">" + u + "</option>"; }).join("") + "</select>";
+  }
+  V.stocknew = function () {
+    return "<h1>➕ Add new item</h1>" + flashHtml() + '<form class="card" data-form="stocknew">' +
+      '<label for="iname">Item name <span class="hint">e.g. Onion, Cooking oil, Rice</span></label><input type="text" id="iname" name="name" autocomplete="off">' +
+      '<label for="unit">Measured in</label>' + unitSelect("kg") +
+      '<label for="iqty">How much do you have now?</label><input type="text" inputmode="decimal" autocomplete="off" placeholder="0" id="iqty" name="qty">' +
+      '<label for="ilow">Warn me when it goes below <span class="hint">It then shows in “Need to Buy”</span></label>' +
+      '<input type="text" inputmode="decimal" autocomplete="off" placeholder="0" id="ilow" name="low">' +
+      '<button class="btn big go" type="submit" name="next" value="stock">✓ Add</button>' +
+      '<button class="btn big light" type="submit" name="next" value="again">✓ Add and add another</button></form>';
+  };
+  V.stockedit = function () {
+    var i = D.items.find(function (x) { return x.id === U.editId; });
+    if (!i) return "<h1>Item not found</h1><p>It may have been removed.</p>";
+    return "<h1>Change: " + esc(i.name) + "</h1>" + flashHtml() + '<form class="card" data-form="stockedit">' +
+      '<label for="iname">Item name</label><input type="text" id="iname" name="name" value="' + esc(i.name) + '">' +
+      '<label for="unit">Measured in</label>' + unitSelect(i.unit) +
+      '<label for="iqty">How much is there now?</label><input type="text" inputmode="decimal" id="iqty" name="qty" value="' + esc(q(i.qty)) + '">' +
+      '<label for="ilow">Warn me when it goes below</label><input type="text" inputmode="decimal" id="ilow" name="low" value="' + esc(q(i.low)) + '">' +
+      '<button class="btn big go" type="submit">✓ Save</button></form>' +
+      '<div class="footer">' + removeBtn("item:" + i.id, "🗑 Remove this item") + "</div>";
+  };
+
+  V.buy = function () {
+    var open = openBuy(), h = "<h1>🛒 Need to Buy</h1>" + flashHtml();
+    h += open.length ? '<ul class="list">' + open.map(function (b) {
+      return "<li><div><div class=\"what\">" + esc(b.name) + (b.qty ? " – " + q(b.qty) + " " + esc(b.unit || "") : "") + "</div>" +
+        (b.note ? '<div class="muted small">' + esc(b.note) + "</div>" : "") + "</div>" +
+        '<div class="row"><button type="button" class="btn go sm" data-act="bought" data-id="' + b.id + '">✓ Bought</button>' +
+        removeBtn("buy:" + b.id) + "</div></li>"; }).join("") + "</ul>" : '<p class="muted">The list is empty. 👍</p>';
+    var low = lowItems().filter(function (i) { return !open.some(function (b) { return b.name.toLowerCase() === i.name.toLowerCase(); }); });
+    if (low.length) {
+      h += '<h2>⚠️ Running low</h2><ul class="list">' + low.map(function (i) {
+        return '<li class="low"><div><div class="what">' + esc(i.name) + '</div><div class="muted small">' + q(i.qty) + " " + esc(i.unit) + " left</div></div>" +
+          '<button type="button" class="btn sm" data-act="addlow" data-id="' + i.id + '">➕ Add to list</button></li>'; }).join("") + "</ul>";
+    }
+    var names = D.items.map(function (i) { return '<option value="' + esc(i.name) + '">'; }).join("");
+    h += '<h2>Add something to buy</h2><form class="card" data-form="buy">' +
+      '<label for="bname">What?</label><input type="text" id="bname" name="name" list="known" autocomplete="off"><datalist id="known">' + names + "</datalist>" +
+      '<div class="row"><div class="grow"><label for="bqty">How much?</label><input type="text" inputmode="decimal" autocomplete="off" placeholder="0" id="bqty" name="qty"></div>' +
+      '<div class="grow"><label for="unit">Unit</label><select id="unit" name="unit"><option value="">–</option>' +
+      UNITS.map(function (u) { return "<option>" + u + "</option>"; }).join("") + "</select></div></div>" +
+      '<label for="bnote">Note <span class="hint">Optional, e.g. “from Ramesh”</span></label><input type="text" id="bnote" name="note" autocomplete="off">' +
+      '<button class="btn big" type="submit">➕ Add to list</button></form>';
+    var bought = D.buy.filter(function (b) { return b.status === "bought"; }).sort(function (a, b) { return (b.at || 0) - (a.at || 0); }).slice(0, 8);
+    if (bought.length) {
+      h += '<h2>Recently bought</h2><ul class="list">' + bought.map(function (b) {
+        return '<li class="muted"><span>✅ ' + esc(b.name) + "</span><span>" + (b.qty ? q(b.qty) + " " + esc(b.unit || "") : "") + "</span></li>"; }).join("") + "</ul>";
+    }
+    return h;
+  };
+
+  V.report = function () {
+    var ym = U.month, m = monthTotals(ym), cur = today().slice(0, 7);
+    var h = '<div class="month-nav"><button type="button" class="btn light sm" data-act="month" data-n="-1" aria-label="Previous month">◀</button>' +
+      "<h1>📊 " + esc(monthName(ym)) + "</h1>" +
+      '<button type="button" class="btn light sm" data-act="month" data-n="1" aria-label="Next month"' + (ym >= cur ? " disabled" : "") + ">▶</button></div>" + flashHtml();
+    h += '<div class="stats">' + stat("Orders", q(m.orders)) + stat("Total sales", rs(m.sales)) + stat("Money received", rs(m.received)) +
+      stat("Still to come", rs(m.toCome)) + stat("Money spent", rs(m.spent)) + stat("Sales − spent", rs(m.profit), m.profit >= 0 ? "pos" : "neg") + "</div>";
+    h += '<button type="button" class="btn big wa" data-act="sharemonth">📤 Send this month’s report</button>';
+    var cats = Object.keys(m.cats).sort(function (a, b) { return m.cats[b] - m.cats[a]; });
+    if (cats.length) {
+      h += '<h2>Where the money went</h2><ul class="list">' + cats.map(function (c) {
+        return '<li><span class="what">' + esc(c) + "</span><span>" + rs(m.cats[c]) + "</span></li>"; }).join("") + "</ul>";
+    }
+    var last = ym === cur ? today() : iso(new Date(asDate(ym + "-01").getFullYear(), asDate(ym + "-01").getMonth() + 1, 0));
+    var rows = [], d = last;
+    while (d.slice(0, 7) === ym) { rows.push(d); d = addDays(d, -1); }
+    h += '<h2>Day by day</h2><p class="muted small">Tap a day to see or change it. Red = sales not filled.</p><div class="table-wrap"><table>' +
+      "<thead><tr><th>Day</th><th>Orders</th><th>Sales</th><th>Received</th><th>To come</th><th>Spent</th><th>Sales − spent</th></tr></thead><tbody>" +
+      rows.map(function (r) {
+        var t = dayTotals(r);
+        return '<tr class="' + (t.filled ? "" : "miss") + '" data-go="sales" data-day="' + r + '"><td>' + esc(nice(r)) + "</td><td>" +
+          (t.filled ? q(t.orders) : "–") + "</td><td>" + (t.filled ? rs(t.sales) : "not filled") + "</td><td>" + (t.filled ? rs(t.received) : "") +
+          "</td><td>" + (t.filled ? rs(t.toCome) : "") + "</td><td>" + rs(t.spent) + '</td><td class="' + (t.sales - t.spent >= 0 ? "" : "neg") + '">' +
+          rs(t.sales - t.spent) + "</td></tr>"; }).join("") +
+      "</tbody><tfoot><tr><td>Total</td><td>" + q(m.orders) + "</td><td>" + rs(m.sales) + "</td><td>" + rs(m.received) + "</td><td>" + rs(m.toCome) +
+      "</td><td>" + rs(m.spent) + "</td><td>" + rs(m.profit) + "</td></tr></tfoot></table></div>";
+    return h;
+  };
+
+  V.settings = function () {
+    var h = "<h1>💾 Backup &amp; settings</h1>" + flashHtml();
+    h += '<div class="card"><h2>Backup</h2><p>Everything is kept only on this phone. Make a backup <strong>every week</strong> and send it to yourself on WhatsApp or Gmail.</p>' +
+      '<p class="muted">Last backup: ' + (D.lastBackup ? esc(nice(D.lastBackup)) : "never") + "</p>" +
+      '<button type="button" class="btn big go" data-act="backup">💾 Make backup now</button></div>';
+    h += '<div class="card"><h2>Bring back a backup</h2><p>On a new phone, choose the backup file you saved. <strong>This replaces everything on this phone.</strong></p>' +
+      '<input type="file" id="restorefile" accept=".json,application/json,text/plain">';
+    if (U.restore) {
+      h += '<div class="flash bad confirm">This backup has ' + Object.keys(U.restore.sales).length + " days of sales and " + U.restore.spent.length +
+        " expenses. Replace everything on this phone with it?" +
+        '<div class="row" style="margin-top:10px"><button type="button" class="btn go" data-act="restoreyes">Yes, bring it back</button>' +
+        '<button type="button" class="btn light" data-act="restoreno">Cancel</button></div></div>';
+    }
+    h += "</div>";
+    h += '<form class="card" data-form="settings"><h2>Kitchen name</h2><label for="kitchen">Name shown at the top and in reports</label>' +
+      '<input type="text" id="kitchen" name="kitchen" value="' + esc(D.kitchen) + '"><button class="btn big" type="submit">✓ Save name</button></form>';
+    return h;
+  };
+
+  // ---------- render
+  function render() {
+    document.getElementById("homeBtn").hidden = U.view === "home";
+    document.getElementById("kname").textContent = "🍳 " + D.kitchen;
+    app.innerHTML = V[U.view]();
+  }
+
+  // ---------- saving forms
+  function base() { return { at: Date.now() }; }
+  var forms = {
+    sales: function (f) {
+      D.sales[U.day] = { date: U.day, orders: num(f.orders.value, "How many orders?", true), sales: num(f.sales.value, "Total sales"),
+        received: num(f.received.value, "Money received"), toCome: num(f.toCome.value, "Money still to come"), notes: f.notes.value.trim(), at: Date.now() };
+      save(); say("ok", "Saved ✅ Sales for " + nice(U.day).toLowerCase());
+      go(U.day === today() ? "home" : "report", { month: U.day.slice(0, 7) });
+    },
+    spent: function (f) {
+      var amount = num(f.amount.value, "How much money?");
+      if (!(amount > 0)) throw new Error("Please type how much money was spent.");
+      var cat = (f.querySelector("input[name=cat]:checked") || {}).value;
+      if (!cat) throw new Error("Please tap what the money was spent on.");
+      var entry = U.editId ? D.spent.find(function (x) { return x.id === U.editId; }) : null;
+      if (entry) { entry.amount = amount; entry.cat = cat; entry.note = f.note.value.trim(); say("ok", "Changed ✅ " + rs(amount) + " for " + cat); }
+      else { D.spent.push({ id: newId(), date: U.day, amount: amount, cat: cat, note: f.note.value.trim(), at: Date.now() }); say("ok", "Saved ✅ " + rs(amount) + " for " + cat); }
+      save(); go("spent", { day: U.day });
+    },
+    stock: function (f) {
+      var t = today(), changed = 0;
+      var updates = D.items.map(function (i) { var el = f.elements[i.id]; return [i, el && el.value.trim() !== "" ? num(el.value, i.name) : null]; });
+      updates.forEach(function (u) { if (u[1] != null) { u[0].qty = u[1]; u[0].countedOn = t; changed++; } });
+      if (!changed) throw new Error("Type how much is left in at least one box.");
+      save(); say("ok", "Saved ✅ " + changed + " item" + (changed > 1 ? "s" : "") + " updated"); go("home");
+    },
+    stocknew: function (f, submitter) {
+      var name = f.name.value.trim();
+      if (!name) throw new Error("Please type the item name.");
+      if (D.items.some(function (i) { return i.name.toLowerCase() === name.toLowerCase(); })) throw new Error("“" + name + "” is already in the list.");
+      D.items.push({ id: newId(), name: name, unit: f.unit.value, qty: num(f.qty.value, "How much do you have now?"),
+        low: num(f.low.value, "Warn me when it goes below"), countedOn: null, at: Date.now() });
+      save(); say("ok", "Added ✅ " + name);
+      go(submitter && submitter.value === "again" ? "stocknew" : "stock");
+    },
+    stockedit: function (f) {
+      var i = D.items.find(function (x) { return x.id === U.editId; }), name = f.name.value.trim();
+      if (!i) return go("stock");
+      if (!name) throw new Error("Please type the item name.");
+      if (D.items.some(function (x) { return x.id !== i.id && x.name.toLowerCase() === name.toLowerCase(); })) throw new Error("Another item already has that name.");
+      var qty = num(f.qty.value, "How much is there now?");
+      if (qty !== Number(i.qty)) { i.qty = qty; i.countedOn = today(); }
+      i.name = name; i.unit = f.unit.value; i.low = num(f.low.value, "Warn me when it goes below");
+      save(); say("ok", "Saved ✅ " + name); go("stock");
+    },
+    buy: function (f) {
+      var name = f.name.value.trim();
+      if (!name) throw new Error("Please type what needs to be bought.");
+      var known = D.items.find(function (i) { return i.name.toLowerCase() === name.toLowerCase(); });
+      D.buy.push({ id: newId(), name: known ? known.name : name, qty: num(f.qty.value, "How much?"),
+        unit: f.unit.value || (known ? known.unit : ""), note: f.note.value.trim(), status: "open", at: Date.now() });
+      save(); say("ok", "Added ✅ " + name); go("buy");
+    },
+    settings: function (f) {
+      var name = f.kitchen.value.trim();
+      if (!name) throw new Error("Please type the kitchen name.");
+      D.kitchen = name; save(); say("ok", "Saved ✅"); go("settings");
+    }
+  };
+
+  // ---------- buttons
+  var acts = {
+    remove: function (b) {
+      var key = b.dataset.key;
+      if (U.armed !== key) { U.armed = key; render(); return; }
+      U.armed = null;
+      var i = key.indexOf(":"), kind = key.slice(0, i), id = key.slice(i + 1);
+      if (kind === "sales") { delete D.sales[id]; save(); say("ok", "Removed sales for " + nice(id).toLowerCase()); go("sales", { day: id }); return; }
+      if (kind === "spent") { D.spent = D.spent.filter(function (x) { return x.id !== id; }); save(); say("ok", "Removed."); go("spent", { day: U.day }); return; }
+      if (kind === "buy") { D.buy = D.buy.filter(function (x) { return x.id !== id; }); save(); say("ok", "Removed from the list."); go("buy"); return; }
+      if (kind === "item") { D.items = D.items.filter(function (x) { return x.id !== id; }); save(); say("ok", "Item removed."); go("stock"); }
+    },
+    bought: function (b) {
+      var r = D.buy.find(function (x) { return x.id === b.dataset.id; });
+      if (!r) return;
+      r.status = "bought"; r.boughtOn = today(); r.at = Date.now();
+      var item = D.items.find(function (i) { return i.name.toLowerCase() === r.name.toLowerCase(); });
+      if (item && r.qty) item.qty = Math.round((Number(item.qty || 0) + Number(r.qty)) * 100) / 100;
+      save(); say("ok", "Bought ✅ " + r.name + (item && r.qty ? " (added to stock)" : "")); go("buy");
+    },
+    addlow: function (b) {
+      var i = D.items.find(function (x) { return x.id === b.dataset.id; });
+      if (!i) return;
+      D.buy.push({ id: newId(), name: i.name, qty: 0, unit: i.unit, note: "", status: "open", at: Date.now() });
+      save(); say("ok", "Added ✅ " + i.name); go("buy");
+    },
+    month: function (b) { U.month = addMonths(U.month, Number(b.dataset.n)); go("report", { month: U.month }); },
+    sharetoday: function () { shareText(dayReport(today())); },
+    sharemonth: function () { shareText(monthReport(U.month)); },
+    backup: function () {
+      var t = today();
+      D.lastBackup = t; save();
+      shareFile("kitchen-backup-" + t + ".json", JSON.stringify(D));
+      say("ok", "Backup made ✅ Send it to yourself (WhatsApp or Gmail) so it is safe.");
+      render();
+    },
+    restoreyes: function () {
+      D = fix(U.restore); U.restore = null; save();
+      say("ok", "Backup brought back ✅"); go("home");
+    },
+    restoreno: function () { U.restore = null; render(); }
+  };
+
+  function showError(f, err) {
+    var old = app.querySelector(".flash.bad.inline");
+    if (old) old.remove();
+    var div = document.createElement("div");
+    div.className = "flash bad inline"; div.setAttribute("role", "alert"); div.textContent = err && err.message ? err.message : "Something went wrong. Please try again.";
+    f.parentNode.insertBefore(div, f);
+    div.scrollIntoView({ block: "center" });
+  }
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-go],[data-act],[data-day]");
+    if (!b) return;
+    if (b.dataset.go) { go(b.dataset.go, { id: b.dataset.id, day: b.dataset.day }); return; }
+    if (b.dataset.day) { go(U.view, { day: b.dataset.day }); return; }
+    var fn = acts[b.dataset.act];
+    if (fn) { try { fn(b); } catch (err) { say("bad", err.message || "Something went wrong."); render(); } }
+  });
+  document.addEventListener("submit", function (e) {
+    var f = e.target.closest("form[data-form]");
+    if (!f) return;
+    e.preventDefault();
+    try { forms[f.dataset.form](f, e.submitter); } catch (err) { showError(f, err); }
+  });
+  document.addEventListener("change", function (e) {
+    if (e.target.id === "pickday" && e.target.value) { go(U.view, { day: e.target.value > today() ? today() : e.target.value }); return; }
+    if (e.target.id === "restorefile" && e.target.files && e.target.files[0]) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        try {
+          var d = JSON.parse(reader.result);
+          if (!d || d.v !== 1 || typeof d.sales !== "object" || !Array.isArray(d.spent)) throw new Error("bad");
+          U.restore = fix(d);
+        } catch (err) { say("bad", "That file is not a Kitchen Book backup."); }
+        render();
+      };
+      reader.readAsText(e.target.files[0]);
+    }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

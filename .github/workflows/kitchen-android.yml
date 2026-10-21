@@ -1,0 +1,50 @@
+name: Build Kitchen Book Android app
+
+on:
+  push:
+    paths:
+      - "cloud-kitchen-app/android/**"
+      - ".github/workflows/kitchen-android.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cloud-kitchen-app/android
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      - name: Build the app
+        run: gradle assembleRelease --no-daemon
+
+      - name: Name the file
+        run: cp app/build/outputs/apk/release/app-release.apk KitchenBook.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: KitchenBook-apk
+          path: cloud-kitchen-app/android/KitchenBook.apk
+
+      - name: Publish a download link (Releases page)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete kitchen-app --yes --cleanup-tag || true
+          gh release create kitchen-app KitchenBook.apk \
+            --title "Kitchen Book app (Android)" \
+            --notes "Open this page on the Android phone and tap KitchenBook.apk to download and install. Built from ${GITHUB_SHA::7}." \
+            --target "$GITHUB_SHA"

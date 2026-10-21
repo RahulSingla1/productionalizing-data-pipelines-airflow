@@ -1,0 +1,47 @@
+plugins {
+    id "com.android.application"
+}
+
+android {
+    namespace "com.kitchenbook.app"
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.kitchenbook.app"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+    }
+
+    signingConfigs {
+        // A fixed key kept in the repo so every new build installs over the old one
+        // without losing data. It only signs this family app; it is not a store key.
+        kitchen {
+            storeFile file("kitchen.keystore")
+            storePassword "kitchenbook"
+            keyAlias "kitchen"
+            keyPassword "kitchenbook"
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.kitchen
+        }
+        debug {
+            signingConfig signingConfigs.kitchen
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation "androidx.core:core:1.13.1"
+    implementation "androidx.webkit:webkit:1.11.0"
+}
