@@ -1,0 +1,641 @@
+<title>Kitchen Daily Book</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600;700;800&display=swap">
+<style>
+/* Layout: one narrow column of big tap targets, like a ledger book open on the counter. */
+:root {
+  --bg: #fbf8f4;
+  --card: #ffffff;
+  --fg: #1d1a17;
+  --muted: #6c645b;
+  --line: #e6dccf;
+  --brand: #d9480f;
+  --brand-ink: #ffffff;
+  --brand-soft: #fff0e6;
+  --ok: #1d7a36;
+  --ok-bg: #e4f4e8;
+  --bad: #c0262d;
+  --bad-bg: #fcebec;
+  --focus: #d9480f;
+  --font: "Mukta", system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #171412; --card: #221e1b; --fg: #f3ede6; --muted: #b3a89c; --line: #3a332d;
+    --brand: #f76707; --brand-ink: #1a0f08; --brand-soft: #3a2416;
+    --ok: #63c27f; --ok-bg: #18301f; --bad: #ff8087; --bad-bg: #3a1c1e; --focus: #ff922b;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #171412; --card: #221e1b; --fg: #f3ede6; --muted: #b3a89c; --line: #3a332d;
+  --brand: #f76707; --brand-ink: #1a0f08; --brand-soft: #3a2416;
+  --ok: #63c27f; --ok-bg: #18301f; --bad: #ff8087; --bad-bg: #3a1c1e; --focus: #ff922b;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { font-size: 19px; -webkit-text-size-adjust: 100%; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font); line-height: 1.45; font-size: 1rem; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--brand); }
+
+.top {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--brand); color: var(--brand-ink);
+  display: flex; align-items: center; gap: 10px;
+  padding-block: 10px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.top .name { flex: 1; font-weight: 800; font-size: 1.1rem; min-width: 0; }
+.top button { font: inherit; font-weight: 700; color: var(--brand-ink); background: transparent;
+  border: 2px solid currentColor; border-radius: 12px; padding: 4px 14px; min-height: 44px; cursor: pointer; }
+
+main { max-width: 760px; margin: 0 auto; padding-block: 16px 96px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1 { font-size: 1.65rem; line-height: 1.2; margin: 6px 0 2px; text-wrap: balance; }
+h2 { font-size: 1.2rem; margin: 26px 0 10px; text-wrap: balance; }
+.lead { color: var(--muted); margin: 0 0 8px; }
+.muted { color: var(--muted); }
+.small { font-size: .85rem; }
+.stack { display: grid; gap: 10px; }
+
+.flash { border-radius: 14px; padding: 12px 16px; margin: 12px 0; font-weight: 700; font-size: 1.05rem; }
+.flash.ok { background: var(--ok-bg); color: var(--ok); }
+.flash.bad { background: var(--bad-bg); color: var(--bad); }
+
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+@media (min-width: 640px) { .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.tile { font: inherit; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  text-align: center; min-height: 136px; padding: 12px; border-radius: 18px; background: var(--card); color: var(--fg);
+  border: 2px solid var(--line); font-weight: 700; font-size: 1.1rem; cursor: pointer; }
+.tile .icon { font-size: 2.5rem; line-height: 1.15; }
+.tile .state { font-size: .85rem; font-weight: 600; color: var(--muted); }
+.tile.todo { border-color: var(--bad); background: var(--bad-bg); }
+.tile.todo .state { color: var(--bad); }
+.tile.done { border-color: var(--ok); background: var(--ok-bg); }
+.tile.done .state { color: var(--ok); }
+.tile:active { transform: translateY(2px); }
+
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 18px; margin: 14px 0; }
+label, .label { display: block; font-weight: 700; margin: 16px 0 6px; font-size: 1.05rem; }
+.hint { display: block; font-weight: 400; color: var(--muted); font-size: .85rem; }
+input[type=text], select, textarea {
+  width: 100%; font: inherit; font-size: 1.25rem; padding: 12px 14px; border: 2px solid var(--line); border-radius: 12px;
+  background: var(--bg); color: var(--fg); }
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible {
+  outline: 3px solid var(--focus); outline-offset: 2px; }
+.cur { position: relative; }
+.cur span { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 1.25rem; color: var(--muted); }
+.cur input { padding-left: 38px; }
+
+.btn { font: inherit; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 54px;
+  padding: 8px 20px; border-radius: 14px; border: 2px solid transparent; cursor: pointer; font-size: 1.12rem; font-weight: 700;
+  background: var(--brand); color: var(--brand-ink); }
+.btn.big { width: 100%; min-height: 62px; font-size: 1.3rem; margin-top: 20px; }
+.btn.go { background: var(--ok); color: var(--card); }
+.btn.light { background: var(--card); color: var(--fg); border-color: var(--line); }
+.btn.red { background: var(--card); color: var(--bad); border-color: var(--bad); }
+.btn.red.armed { background: var(--bad); color: var(--card); }
+.btn.sm { min-height: 44px; font-size: 1rem; padding: 4px 14px; }
+.btn[disabled] { opacity: .55; cursor: default; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.row > .grow { flex: 1 1 140px; min-width: 0; }
+
+.days { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
+.days button { font: inherit; font-weight: 700; padding: 10px; border-radius: 12px; border: 2px solid var(--line);
+  background: var(--card); color: var(--fg); cursor: pointer; min-height: 50px; }
+.days button.on { background: var(--brand); border-color: var(--brand); color: var(--brand-ink); }
+
+.choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (min-width: 640px) { .choices { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.choices input { position: absolute; opacity: 0; pointer-events: none; }
+.choices label { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center;
+  padding: 12px 6px; border: 2px solid var(--line); border-radius: 14px; background: var(--bg); cursor: pointer; font-size: .95rem; }
+.choices label .icon { font-size: 1.8rem; }
+.choices input:checked + label { border-color: var(--brand); background: var(--brand-soft); box-shadow: inset 0 0 0 2px var(--brand); }
+.choices input:focus-visible + label { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  padding: 12px 14px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; }
+.list li > div { min-width: 0; }
+.list .what { font-weight: 700; }
+.list li.low { border-color: var(--bad); background: var(--bad-bg); }
+
+.stock-row { display: grid; grid-template-columns: minmax(0, 1fr) 130px; gap: 12px; align-items: center;
+  padding: 12px 14px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; }
+.stock-row.low { border-color: var(--bad); background: var(--bad-bg); }
+.stock-row label { margin: 0; font-size: 1.1rem; }
+.stock-row input { text-align: center; padding: 10px; }
+.stock-row .linkish { font: inherit; font-size: .85rem; color: var(--muted); background: none; border: 0; padding: 4px 0; text-decoration: underline; cursor: pointer; }
+
+.stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (min-width: 640px) { .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.stat { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+.stat .k { color: var(--muted); font-size: .85rem; font-weight: 600; }
+.stat .v { font-size: 1.35rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
+table { border-collapse: collapse; width: 100%; font-size: .95rem; font-variant-numeric: tabular-nums; }
+th, td { padding: 9px 12px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { font-size: .82rem; color: var(--muted); }
+tr.miss td { color: var(--bad); }
+.pos { color: var(--ok); } .neg { color: var(--bad); }
+.footer { margin-top: 30px; display: flex; gap: 10px; flex-wrap: wrap; }
+@media (prefers-reduced-motion: reduce) { .tile:active { transform: none; } }
+</style>
+
+<header class="top">
+  <div class="name">🍳 Kitchen Daily Book</div>
+  <button type="button" id="homeBtn" data-go="home" hidden>🏠 Home</button>
+</header>
+<main id="app">
+  <h1>Opening your kitchen book…</h1>
+  <p class="lead">Today's sales, money spent and stock will show here in a moment.</p>
+</main>
+
+<script>
+(function () {
+  "use strict";
+  var CATS = [
+    ["Vegetables & Groceries", "🥕"], ["Meat & Dairy", "🥛"], ["Gas & Electricity", "🔥"],
+    ["Packaging", "📦"], ["Staff Salary", "👨‍🍳"], ["Rent", "🏠"],
+    ["Delivery & Commission", "🛵"], ["Repairs", "🔧"], ["Other", "📝"]
+  ];
+  var UNITS = ["kg", "g", "litre", "ml", "pieces", "packets", "dozen", "boxes"];
+
+  var S = {
+    db: null, user: null, downloads: null, myId: null, myName: "",
+    money: false, canWrite: true, owner: false, failed: false, loaded: false,
+    sales: {}, spent: [], items: [], buy: [],
+    view: "home", day: null, editId: null, flash: null, dirty: false, armed: null
+  };
+  var app = document.getElementById("app");
+
+  // ---------- helpers
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function iso(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+  function today() { return iso(new Date()); }
+  function addDays(s, n) { var p = s.split("-").map(Number); return iso(new Date(p[0], p[1] - 1, p[2] + n)); }
+  function asDate(s) { var p = s.split("-").map(Number); return new Date(p[0], p[1] - 1, p[2]); }
+  function nice(s) {
+    if (s === today()) return "Today";
+    if (s === addDays(today(), -1)) return "Yesterday";
+    return asDate(s).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
+  }
+  function rs(n) { return "₹" + Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 }); }
+  function q(n) { return Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 }); }
+  function num(v, label, whole) {
+    v = String(v == null ? "" : v).replace(/,/g, "").trim();
+    if (v === "") return 0;
+    var n = Number(v);
+    if (!isFinite(n) || n < 0) throw new Error("Please type only numbers in “" + label + "”.");
+    return whole ? Math.round(n) : Math.round(n * 100) / 100;
+  }
+  function moneyField(id, label, hint, val) {
+    return '<label for="' + id + '">' + esc(label) + (hint ? '<span class="hint">' + esc(hint) + "</span>" : "") + "</label>" +
+      '<div class="cur"><span>₹</span><input type="text" inputmode="decimal" autocomplete="off" placeholder="0" id="' + id +
+      '" name="' + id + '" value="' + (val ? esc(val) : "") + '"></div>';
+  }
+  function daySwitch() {
+    var t = today(), y = addDays(t, -1);
+    return '<div class="days"><button type="button" data-day="' + y + '" class="' + (S.day === y ? "on" : "") + '">Yesterday</button>' +
+      '<button type="button" data-day="' + t + '" class="' + (S.day === t ? "on" : "") + '">Today</button></div>';
+  }
+  function flashHtml() {
+    if (!S.flash) return "";
+    var f = S.flash; S.flash = null;
+    return '<div class="flash ' + f[0] + '" role="status">' + esc(f[1]) + "</div>";
+  }
+  function say(kind, text) { S.flash = [kind, text]; }
+  function failText(e) {
+    if (e && e.code === "quota_exceeded") return "The book is full. Ask the owner to remove old entries.";
+    if (e && e.code === "invalid_argument") return "You can't change this part. Ask the owner for access.";
+    if (e && e.message && !e.code) return e.message;
+    return "Could not save. Check the internet and try again.";
+  }
+  function go(view, extra) {
+    S.view = view; S.dirty = false; S.armed = null;
+    S.day = (extra && extra.day) || (view === "sales" || view === "spent" ? today() : null);
+    S.editId = extra && extra.id || null;
+    render(); window.scrollTo(0, 0);
+  }
+
+  // ---------- status
+  function status() {
+    var t = today();
+    return {
+      salesDone: !!S.sales[t],
+      spentToday: S.spent.filter(function (x) { return x.date === t; }),
+      stockDone: S.items.length > 0 && S.items.some(function (i) { return i.countedOn === t; }),
+      low: S.items.filter(function (i) { return Number(i.qty) <= Number(i.low); }),
+      open: S.buy.filter(function (b) { return b.status === "open"; })
+    };
+  }
+
+  // ---------- views
+  var V = {};
+
+  V.home = function () {
+    var st = status(), todo = [];
+    if (S.money) { todo.push(st.salesDone); todo.push(st.spentToday.length > 0); }
+    todo.push(st.stockDone);
+    var pending = todo.filter(function (d) { return !d; }).length;
+    var buyCount = st.open.length + st.low.filter(function (i) {
+      return !st.open.some(function (b) { return b.name.toLowerCase() === i.name.toLowerCase(); }); }).length;
+    var h = "<h1>Namaste" + (S.myName ? ", " + esc(S.myName.split(" ")[0]) : "") + " 🙏</h1>" +
+      '<p class="lead">' + esc(new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })) + "</p>" + flashHtml();
+    if (!S.canWrite) {
+      h += '<div class="flash bad">You can only look at this book. Ask the owner to give you “Contributor” or “Editor” access to fill it.</div>';
+    } else if (pending) {
+      h += '<div class="flash bad">Please fill ' + pending + " thing" + (pending > 1 ? "s" : "") + " for today 👇</div>";
+    } else {
+      h += '<div class="flash ok">Everything is filled for today. Thank you! 👍</div>';
+    }
+    h += '<div class="tiles">';
+    if (S.money) {
+      h += tile("sales", "💰", "Today's Sales", st.salesDone, st.salesDone ? "✅ Filled" : "❌ Not filled");
+      h += tile("spent", "🧾", "Money Spent", st.spentToday.length > 0,
+        st.spentToday.length ? "✅ " + st.spentToday.length + " added" : "❌ Nothing added");
+    }
+    h += tile("stock", "📦", "Stock Left", st.stockDone, st.stockDone ? "✅ Updated" : "❌ Not updated");
+    h += tile("buy", "🛒", "Need to Buy", null, buyCount + " item" + (buyCount === 1 ? "" : "s"));
+    if (S.money) h += tile("report", "📊", "Reports", null, "This month");
+    h += "</div>";
+    if (S.owner) {
+      h += '<div class="card"><h2 style="margin-top:0">👥 Adding people</h2>' +
+        "<p>Use the <strong>Share</strong> button on this page and invite each person by email:</p>" +
+        '<ul class="stack" style="padding-left:20px;margin:0">' +
+        "<li><strong>Editor</strong>: sees and fills <em>everything</em> (sales, money spent, reports and stock).</li>" +
+        "<li><strong>Contributor</strong>: sees and fills <em>stock only</em>. Money is hidden from them.</li></ul>" +
+        '<p class="muted small">Each person needs a free Claude account. On a phone, open the link and use “Add to Home Screen” to keep it like an app.</p></div>';
+    }
+    return h;
+  };
+  function tile(view, icon, label, done, state) {
+    var cls = done === true ? "done" : done === false ? "todo" : "";
+    return '<button type="button" class="tile ' + cls + '" data-go="' + view + '"><span class="icon" aria-hidden="true">' + icon +
+      "</span>" + esc(label) + '<span class="state">' + esc(state) + "</span></button>";
+  }
+
+  V.sales = function () {
+    var e = S.sales[S.day] || {};
+    return "<h1>💰 Sales: " + esc(nice(S.day)) + "</h1>" + daySwitch() + flashHtml() +
+      '<form class="card" data-form="sales">' +
+      '<label for="orders">How many orders?</label>' +
+      '<input type="text" inputmode="numeric" autocomplete="off" placeholder="0" id="orders" name="orders" value="' + (e.orders != null ? esc(e.orders) : "") + '">' +
+      moneyField("sales", "Total sales", "Full value of all orders", e.sales) +
+      moneyField("received", "Money received", "Cash + UPI + card actually in hand or bank", e.received) +
+      moneyField("toCome", "Money still to come", "From Swiggy / Zomato / customers who pay later", e.toCome) +
+      '<label for="notes">Anything to remember? <span class="hint">Optional</span></label>' +
+      '<textarea id="notes" name="notes" rows="2">' + esc(e.notes || "") + "</textarea>" +
+      '<button class="btn big go" type="submit">✓ Save</button></form>';
+  };
+
+  V.spent = function () {
+    var cats = CATS.map(function (c, i) {
+      return '<input type="radio" name="cat" id="cat' + i + '" value="' + esc(c[0]) + '"><label for="cat' + i + '"><span class="icon" aria-hidden="true">' +
+        c[1] + "</span>" + esc(c[0]) + "</label>"; }).join("");
+    return "<h1>🧾 Money Spent: " + esc(nice(S.day)) + "</h1>" + daySwitch() + flashHtml() +
+      '<form class="card" data-form="spent">' + moneyField("amount", "How much money?", "", "") +
+      '<span class="label">Spent on what? <span class="hint">Tap one</span></span><div class="choices">' + cats + "</div>" +
+      '<label for="note">Details <span class="hint">Optional, e.g. “10 kg onion from Ramesh”</span></label>' +
+      '<input type="text" id="note" name="note" autocomplete="off">' +
+      '<button class="btn big go" type="submit">✓ Add</button></form><div id="live">' + V.spentLive() + "</div>";
+  };
+  V.spentLive = function () {
+    var list = S.spent.filter(function (x) { return x.date === S.day; }).sort(function (a, b) { return b.at - a.at; });
+    var total = list.reduce(function (s, x) { return s + Number(x.amount || 0); }, 0);
+    if (!list.length) return '<h2>Already added</h2><p class="muted">Nothing added yet.</p>';
+    return "<h2>Already added: " + rs(total) + '</h2><ul class="list">' + list.map(function (x) {
+      return "<li><div><div class=\"what\">" + rs(x.amount) + " · " + esc(x.cat) + "</div>" +
+        (x.note ? '<div class="muted small">' + esc(x.note) + "</div>" : "") + "</div>" +
+        removeBtn("spent", x.id) + "</li>"; }).join("") + "</ul>";
+  };
+  function removeBtn(kind, id) {
+    var key = kind + ":" + id, armed = S.armed === key;
+    return '<button type="button" class="btn red sm' + (armed ? " armed" : "") + '" data-act="remove" data-key="' + esc(key) + '">' +
+      (armed ? "Tap again to remove" : "Remove") + "</button>";
+  }
+
+  V.stock = function () {
+    var h = "<h1>📦 Stock Left</h1>" + flashHtml();
+    if (!S.items.length) {
+      return h + '<div class="card"><p style="margin-top:0"><strong>No items yet.</strong></p>' +
+        "<p>Add the things you keep in the kitchen, like Onion, Oil, Rice, Paneer. Then come here every day and type how much is left.</p>" +
+        '<button class="btn big" type="button" data-go="stocknew">➕ Add first item</button></div>';
+    }
+    var t = today();
+    h += '<p class="lead">Check the kitchen and type how much is left now. Leave a box empty if it hasn\'t changed.</p>' +
+      '<form data-form="stock" class="stack">' + S.items.map(function (i) {
+        var low = Number(i.qty) <= Number(i.low);
+        return '<div class="stock-row' + (low ? " low" : "") + '"><div><label for="q_' + esc(i.id) + '">' + esc(i.name) + "</label>" +
+          '<div class="muted small">Last count: ' + q(i.qty) + " " + esc(i.unit) + (i.countedOn === t ? " · ✅ today" : "") +
+          (low ? ' · <strong style="color:var(--bad)">running low</strong>' : "") + "</div>" +
+          '<button type="button" class="linkish" data-go="stockedit" data-id="' + esc(i.id) + '">change item</button></div>' +
+          '<div><input type="text" inputmode="decimal" autocomplete="off" id="q_' + esc(i.id) + '" name="' + esc(i.id) + '" placeholder="' + q(i.qty) + '">' +
+          '<div class="muted small" style="text-align:center">' + esc(i.unit) + "</div></div></div>";
+      }).join("") + '<button class="btn big go" type="submit">✓ Save stock</button></form>';
+    h += '<div class="footer"><button type="button" class="btn light" data-go="stocknew">➕ Add new item</button>' +
+      '<button type="button" class="btn light" data-go="buy">🛒 Need to buy</button></div>';
+    return h;
+  };
+
+  function unitSelect(sel) {
+    return '<select id="unit" name="unit">' + UNITS.map(function (u) {
+      return "<option" + (u === sel ? " selected" : "") + ">" + u + "</option>"; }).join("") + "</select>";
+  }
+  V.stocknew = function () {
+    return "<h1>➕ Add new item</h1>" + flashHtml() + '<form class="card" data-form="stocknew">' +
+      '<label for="iname">Item name <span class="hint">e.g. Onion, Cooking oil, Rice</span></label>' +
+      '<input type="text" id="iname" name="name" autocomplete="off">' +
+      '<label for="unit">Measured in</label>' + unitSelect("kg") +
+      '<label for="iqty">How much do you have now?</label><input type="text" inputmode="decimal" autocomplete="off" placeholder="0" id="iqty" name="qty">' +
+      '<label for="ilow">Warn me when it goes below <span class="hint">It then shows in “Need to Buy”</span></label>' +
+      '<input type="text" inputmode="decimal" autocomplete="off" placeholder="0" id="ilow" name="low">' +
+      '<button class="btn big go" type="submit" name="next" value="stock">✓ Add</button>' +
+      '<button class="btn big light" type="submit" name="next" value="again">✓ Add and add another</button></form>';
+  };
+  V.stockedit = function () {
+    var i = S.items.find(function (x) { return x.id === S.editId; });
+    if (!i) return "<h1>Item not found</h1><p>It may have been removed.</p>";
+    return "<h1>Change: " + esc(i.name) + "</h1>" + flashHtml() + '<form class="card" data-form="stockedit">' +
+      '<label for="iname">Item name</label><input type="text" id="iname" name="name" value="' + esc(i.name) + '">' +
+      '<label for="unit">Measured in</label>' + unitSelect(i.unit) +
+      '<label for="ilow">Warn me when it goes below</label><input type="text" inputmode="decimal" id="ilow" name="low" value="' + esc(q(i.low)) + '">' +
+      '<button class="btn big go" type="submit">✓ Save</button></form>' +
+      '<div id="live">' + V.stockeditLive() + "</div>";
+  };
+  V.stockeditLive = function () { return removeBtn("item", S.editId); };
+
+  V.buy = function () {
+    var names = S.items.map(function (i) { return '<option value="' + esc(i.name) + '">'; }).join("");
+    return "<h1>🛒 Need to Buy</h1>" + flashHtml() + '<div id="live">' + V.buyLive() + "</div>" +
+      '<h2>Add something to buy</h2><form class="card" data-form="buy">' +
+      '<label for="bname">What?</label><input type="text" id="bname" name="name" list="known" autocomplete="off"><datalist id="known">' + names + "</datalist>" +
+      '<div class="row"><div class="grow"><label for="bqty">How much?</label><input type="text" inputmode="decimal" autocomplete="off" placeholder="0" id="bqty" name="qty"></div>' +
+      '<div class="grow"><label for="unit">Unit</label><select id="unit" name="unit"><option value="">–</option>' +
+      UNITS.map(function (u) { return "<option>" + u + "</option>"; }).join("") + "</select></div></div>" +
+      '<label for="bnote">Note <span class="hint">Optional, e.g. “from Ramesh”</span></label><input type="text" id="bnote" name="note" autocomplete="off">' +
+      '<button class="btn big" type="submit">➕ Add to list</button></form>';
+  };
+  V.buyLive = function () {
+    var st = status(), h = "";
+    if (st.open.length) {
+      h += '<ul class="list">' + st.open.map(function (b) {
+        return "<li><div><div class=\"what\">" + esc(b.name) + (b.qty ? " – " + q(b.qty) + " " + esc(b.unit || "") : "") + "</div>" +
+          (b.note ? '<div class="muted small">' + esc(b.note) + "</div>" : "") + "</div>" +
+          '<div class="row"><button type="button" class="btn go sm" data-act="bought" data-id="' + esc(b.id) + '">✓ Bought</button>' +
+          removeBtn("buy", b.id) + "</div></li>"; }).join("") + "</ul>";
+    } else {
+      h += '<p class="muted">The list is empty. 👍</p>';
+    }
+    var low = st.low.filter(function (i) { return !st.open.some(function (b) { return b.name.toLowerCase() === i.name.toLowerCase(); }); });
+    if (low.length) {
+      h += '<h2>⚠️ Running low</h2><ul class="list">' + low.map(function (i) {
+        return '<li class="low"><div><div class="what">' + esc(i.name) + '</div><div class="muted small">' + q(i.qty) + " " + esc(i.unit) + " left</div></div>" +
+          '<button type="button" class="btn sm" data-act="addlow" data-id="' + esc(i.id) + '">➕ Add to list</button></li>'; }).join("") + "</ul>";
+    }
+    var bought = S.buy.filter(function (b) { return b.status === "bought"; }).sort(function (a, b) { return (b.at || 0) - (a.at || 0); }).slice(0, 8);
+    if (bought.length) {
+      h += '<h2>Recently bought</h2><ul class="list">' + bought.map(function (b) {
+        return '<li class="muted"><span>✅ ' + esc(b.name) + "</span><span>" + (b.qty ? q(b.qty) + " " + esc(b.unit || "") : "") + "</span></li>"; }).join("") + "</ul>";
+    }
+    return h;
+  };
+
+  V.report = function () {
+    var t = today(), monthStart = t.slice(0, 8) + "01", days = [], i;
+    var spentBy = {};
+    S.spent.forEach(function (x) { spentBy[x.date] = (spentBy[x.date] || 0) + Number(x.amount || 0); });
+    for (i = 0; i < 30; i++) {
+      var d = addDays(t, -i), s = S.sales[d];
+      days.push({ d: d, s: s, spent: spentBy[d] || 0 });
+    }
+    var tot = { orders: 0, sales: 0, received: 0, toCome: 0, spent: 0 }, cats = {};
+    Object.keys(S.sales).forEach(function (d) {
+      if (d < monthStart || d > t) return;
+      var s = S.sales[d];
+      tot.orders += Number(s.orders || 0); tot.sales += Number(s.sales || 0);
+      tot.received += Number(s.received || 0); tot.toCome += Number(s.toCome || 0);
+    });
+    S.spent.forEach(function (x) {
+      if (x.date < monthStart || x.date > t) return;
+      tot.spent += Number(x.amount || 0); cats[x.cat] = (cats[x.cat] || 0) + Number(x.amount || 0);
+    });
+    var profit = tot.sales - tot.spent;
+    var h = "<h1>📊 " + esc(asDate(t).toLocaleDateString("en-IN", { month: "long", year: "numeric" })) + "</h1>" +
+      '<p class="lead">This month so far</p>' + flashHtml() + '<div class="stats">' +
+      stat("Orders", q(tot.orders)) + stat("Total sales", rs(tot.sales)) + stat("Money received", rs(tot.received)) +
+      stat("Still to come", rs(tot.toCome)) + stat("Money spent", rs(tot.spent)) +
+      '<div class="stat"><div class="k">Sales − spent</div><div class="v ' + (profit >= 0 ? "pos" : "neg") + '">' + rs(profit) + "</div></div></div>";
+    var catKeys = Object.keys(cats).sort(function (a, b) { return cats[b] - cats[a]; });
+    if (catKeys.length) {
+      h += '<h2>Where the money went</h2><ul class="list">' + catKeys.map(function (c) {
+        return '<li><span class="what">' + esc(c) + "</span><span>" + rs(cats[c]) + "</span></li>"; }).join("") + "</ul>";
+    }
+    h += '<h2>Last 30 days</h2><p class="muted small">Red rows: sales not filled for that day.</p><div class="table-wrap"><table>' +
+      "<thead><tr><th>Day</th><th>Orders</th><th>Sales</th><th>Received</th><th>To come</th><th>Spent</th></tr></thead><tbody>" +
+      days.map(function (r) {
+        return '<tr class="' + (r.s ? "" : "miss") + '"><td>' + esc(nice(r.d)) + "</td><td>" + (r.s ? q(r.s.orders) : "–") + "</td><td>" +
+          (r.s ? rs(r.s.sales) : "not filled") + "</td><td>" + (r.s ? rs(r.s.received) : "") + "</td><td>" + (r.s ? rs(r.s.toCome) : "") +
+          "</td><td>" + rs(r.spent) + "</td></tr>"; }).join("") + "</tbody></table></div>";
+    if (S.downloads) h += '<div class="footer"><button type="button" class="btn light" data-act="csv">⬇️ Download for Excel</button></div>';
+    return h;
+  };
+  function stat(k, v) { return '<div class="stat"><div class="k">' + esc(k) + '</div><div class="v">' + esc(v) + "</div></div>"; }
+
+  // ---------- render
+  function render() {
+    document.getElementById("homeBtn").hidden = S.view === "home" || !S.loaded;
+    if (S.failed) {
+      app.innerHTML = "<h1>Please sign in to Claude</h1><p>This kitchen book saves everything online, so it needs you to be signed in to your Claude account.</p>" +
+        '<p class="muted">Open the link the owner sent you, sign in, and the book will open here.</p>';
+      return;
+    }
+    if (!S.loaded) return;
+    var view = S.view;
+    if (!S.money && (view === "sales" || view === "spent" || view === "report")) view = S.view = "home";
+    app.innerHTML = V[view]();
+  }
+  function update() { if (S.dirty) renderLive(); else render(); }
+  function renderLive() {
+    var live = document.getElementById("live");
+    if (live && V[S.view + "Live"]) live.innerHTML = V[S.view + "Live"]();
+    else if (!S.dirty) render();
+  }
+  var pending;
+  function refresh() {
+    if (pending) return;
+    pending = setTimeout(function () { pending = null; if (S.dirty) renderLive(); else render(); }, 30);
+  }
+
+  // ---------- actions
+  function base() { return { by: S.myId || null, at: Date.now() }; }
+  function assign(target, src) { for (var k in src) target[k] = src[k]; return target; }
+  function busy(form, on) { Array.prototype.forEach.call(form.querySelectorAll("button"), function (b) { b.disabled = on; }); }
+
+  var forms = {
+    sales: async function (f) {
+      var data = {
+        date: S.day,
+        orders: num(f.orders.value, "How many orders?", true),
+        sales: num(f.sales.value, "Total sales"),
+        received: num(f.received.value, "Money received"),
+        toCome: num(f.toCome.value, "Money still to come"),
+        notes: f.notes.value.trim()
+      };
+      await S.db.doc("money/" + S.day).set(assign(data, base()));
+      S.sales[S.day] = data;
+      say("ok", "Saved ✅ Sales for " + nice(S.day).toLowerCase());
+      go("home");
+    },
+    spent: async function (f) {
+      var amount = num(f.amount.value, "How much money?");
+      if (!(amount > 0)) throw new Error("Please type how much money was spent.");
+      var cat = (f.querySelector("input[name=cat]:checked") || {}).value;
+      if (!cat) throw new Error("Please tap what the money was spent on.");
+      await S.db.collection("spent").add(assign({ date: S.day, amount: amount, cat: cat, note: f.note.value.trim() }, base()));
+      say("ok", "Saved ✅ " + rs(amount) + " for " + cat);
+      go("spent", { day: S.day });
+    },
+    stock: async function (f) {
+      var t = today(), changes = [];
+      S.items.forEach(function (i) {
+        var el = f.elements[i.id];
+        if (el && el.value.trim() !== "") changes.push([i, num(el.value, i.name)]);
+      });
+      if (!changes.length) throw new Error("Type how much is left in at least one box.");
+      for (var k = 0; k < changes.length; k++) {
+        await S.db.doc("items/" + changes[k][0].id).update({ qty: changes[k][1], countedOn: t, by: S.myId || null, at: Date.now() });
+      }
+      say("ok", "Saved ✅ " + changes.length + " item" + (changes.length > 1 ? "s" : "") + " updated");
+      go("home");
+    },
+    stocknew: async function (f, submitter) {
+      var name = f.name.value.trim();
+      if (!name) throw new Error("Please type the item name.");
+      if (S.items.some(function (i) { return i.name.toLowerCase() === name.toLowerCase(); })) throw new Error("“" + name + "” is already in the list.");
+      await S.db.collection("items").add(assign({
+        name: name, unit: f.unit.value, qty: num(f.qty.value, "How much do you have now?"),
+        low: num(f.low.value, "Warn me when it goes below"), countedOn: null }, base()));
+      say("ok", "Added ✅ " + name);
+      go(submitter && submitter.value === "again" ? "stocknew" : "stock");
+    },
+    stockedit: async function (f) {
+      var name = f.name.value.trim();
+      if (!name) throw new Error("Please type the item name.");
+      if (S.items.some(function (i) { return i.id !== S.editId && i.name.toLowerCase() === name.toLowerCase(); })) throw new Error("Another item already has that name.");
+      await S.db.doc("items/" + S.editId).update({ name: name, unit: f.unit.value, low: num(f.low.value, "Warn me when it goes below") });
+      say("ok", "Saved ✅ " + name);
+      go("stock");
+    },
+    buy: async function (f) {
+      var name = f.name.value.trim();
+      if (!name) throw new Error("Please type what needs to be bought.");
+      var known = S.items.find(function (i) { return i.name.toLowerCase() === name.toLowerCase(); });
+      await S.db.collection("buy").add(assign({ name: known ? known.name : name, qty: num(f.qty.value, "How much?"),
+        unit: f.unit.value || (known ? known.unit : ""), note: f.note.value.trim(), status: "open" }, base()));
+      say("ok", "Added ✅ " + name);
+      go("buy");
+    }
+  };
+
+  var acts = {
+    remove: async function (b) {
+      var key = b.dataset.key;
+      if (S.armed !== key) { S.armed = key; update(); return; }
+      S.armed = null;
+      var parts = key.split(":"), kind = parts[0], id = parts.slice(1).join(":");
+      if (kind === "spent") { await S.db.doc("spent/" + id).delete(); say("ok", "Removed."); update(); }
+      if (kind === "buy") { await S.db.doc("buy/" + id).delete(); say("ok", "Removed from the list."); update(); }
+      if (kind === "item") { await S.db.doc("items/" + id).delete(); say("ok", "Item removed."); go("stock"); }
+    },
+    bought: async function (b) {
+      var r = S.buy.find(function (x) { return x.id === b.dataset.id; });
+      if (!r) return;
+      await S.db.doc("buy/" + r.id).update({ status: "bought", boughtOn: today(), at: Date.now() });
+      var item = S.items.find(function (i) { return i.name.toLowerCase() === r.name.toLowerCase(); });
+      if (item && r.qty) await S.db.doc("items/" + item.id).update({ qty: Number(item.qty || 0) + Number(r.qty) });
+      say("ok", "Bought ✅ " + r.name + (item && r.qty ? " (added to stock)" : ""));
+      update();
+    },
+    addlow: async function (b) {
+      var i = S.items.find(function (x) { return x.id === b.dataset.id; });
+      if (!i) return;
+      await S.db.collection("buy").add(assign({ name: i.name, qty: 0, unit: i.unit, note: "", status: "open" }, base()));
+      say("ok", "Added ✅ " + i.name);
+      update();
+    },
+    csv: async function () {
+      var rows = [["Date", "Orders", "Sales", "Money received", "Money still to come", "Notes"]];
+      Object.keys(S.sales).sort().forEach(function (d) { var s = S.sales[d]; rows.push([d, s.orders, s.sales, s.received, s.toCome, s.notes || ""]); });
+      rows.push([]); rows.push(["Date", "Spent on", "Amount", "Details"]);
+      S.spent.slice().sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; })
+        .forEach(function (x) { rows.push([x.date, x.cat, x.amount, x.note || ""]); });
+      var csv = rows.map(function (r) { return r.map(function (c) {
+        c = String(c == null ? "" : c); return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(","); }).join("\n");
+      try { await S.downloads.save({ filename: "kitchen-money-" + today() + ".csv", data: csv }); }
+      catch (e) { if (e && e.code !== "declined") { say("bad", "Download is not available here."); render(); } }
+    }
+  };
+
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-go],[data-act],[data-day]");
+    if (!b || !S.loaded) return;
+    if (b.dataset.day) { go(S.view, { day: b.dataset.day }); return; }
+    if (b.dataset.go) { go(b.dataset.go, { id: b.dataset.id }); return; }
+    var fn = acts[b.dataset.act];
+    if (!fn) return;
+    b.disabled = true;
+    fn(b).catch(function (err) { say("bad", failText(err)); render(); }).finally(function () { b.disabled = false; });
+  });
+  document.addEventListener("submit", function (e) {
+    var f = e.target.closest("form[data-form]");
+    if (!f) return;
+    e.preventDefault();
+    busy(f, true);
+    forms[f.dataset.form](f, e.submitter).catch(function (err) {
+      busy(f, false);
+      var old = f.parentNode.querySelector(".flash.bad.inline");
+      if (old) old.remove();
+      var div = document.createElement("div");
+      div.className = "flash bad inline"; div.setAttribute("role", "alert"); div.textContent = failText(err);
+      f.parentNode.insertBefore(div, f);
+      div.scrollIntoView({ block: "center", behavior: "smooth" });
+    });
+  });
+  document.addEventListener("input", function (e) { if (e.target.closest("form")) S.dirty = true; });
+
+  // ---------- start
+  function rows(snap) { return snap.docs.map(function (d) { return assign({ id: d.id }, d.data()); }); }
+  function onErr() { /* subscriptions recover on their own; a terminal error just leaves the last data on screen */ }
+
+  async function start() {
+    var c = window.claude;
+    if (!c || !c.use) { S.failed = true; render(); return; }
+    var got = await Promise.all([c.use("db"), c.use("user"), c.use("downloads")]);
+    S.db = got[0]; S.user = got[1]; S.downloads = got[2];
+    if (!S.db) { S.failed = true; render(); return; }
+    if (S.user) {
+      var me = await S.user.me();
+      S.myId = me.id; S.myName = me.name || ""; S.owner = me.isOwner; S.money = me.canEdit;
+      var w = await S.user.can("data.write");
+      S.canWrite = w !== false;
+    }
+    var since = addDays(today(), -40);
+    since = since < today().slice(0, 8) + "01" ? since : today().slice(0, 8) + "01";
+    S.db.collection("items").orderBy("name").onSnapshot(function (s) { S.items = rows(s); refresh(); }, onErr);
+    S.db.collection("buy").orderBy("at", "desc").limit(300).onSnapshot(function (s) { S.buy = rows(s); refresh(); }, onErr);
+    if (S.money) {
+      S.db.collection("money").where("date", ">=", since).onSnapshot(function (s) {
+        var m = {}; rows(s).forEach(function (r) { m[r.date] = r; }); S.sales = m; refresh(); }, onErr);
+      S.db.collection("spent").where("date", ">=", since).onSnapshot(function (s) { S.spent = rows(s); refresh(); }, onErr);
+    }
+    S.loaded = true;
+    render();
+  }
+  start().catch(function () { S.failed = true; render(); });
+})();
+</script>
