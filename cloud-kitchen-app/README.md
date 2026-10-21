@@ -167,7 +167,21 @@ What it does:
 - **📤 Send report** shares today's or the month's totals on WhatsApp.
 - **💾 Backup** makes a file to send to yourself; **Bring back a backup** restores it on a new phone.
 
-Because the data lives on one phone, make a backup every week.
+- **🛎️ Take an order**: customer name and mobile (both optional), items with quantity and price, automatic
+  total, paid now / pay later. **↩️ Undo** for 2 minutes, **Cancel order** after that, **✓ Got payment** for pay-later.
+  Orders are added to the day's and month's totals automatically.
+
+**Order alerts on every phone (set up once, no accounts):**
+1. On the first phone: 💾 Backup → **✨ Create kitchen code**.
+2. On every other phone: 💾 Backup → type the same code → **✓ Join**, and allow notifications when asked.
+3. Optional: tap **🔔 Keep order alerts on** so Android doesn't stop the alerts to save battery.
+
+Orders travel through the free [ntfy.sh](https://ntfy.sh) service, scrambled with the kitchen code so it can't
+read them. It keeps messages for about 12 hours, so open the app at least once a day on each phone so its totals
+include every order (the background listener also saves them while the phone is on). The free service allows
+roughly 250 messages a day per phone. Without internet, orders wait on the phone and are sent later.
+
+Each phone still keeps its own data, so make a backup every week.
 
 Any change pushed to `android/` rebuilds the app automatically (`.github/workflows/kitchen-android.yml`)
 and replaces the download. New versions install over the old one and keep the data.
