@@ -163,6 +163,16 @@ tfoot td { font-weight: 800; border-bottom: 0; }
 .olist { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 10px; }
 .ocard { background: var(--card); border: 1px solid var(--line); border-left: 5px solid var(--warn); border-radius: 14px; padding: 12px 14px; }
 .ocard.paid { border-left-color: var(--ok); }
+.pill.pending { background: var(--warn-bg); color: var(--warn); }
+.pill.done { background: var(--ok-bg); color: var(--ok); }
+.oacts .btn { flex: 1 1 auto; }
+.oacts.second { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); }
+.oacts.second .btn { min-height: 42px; font-size: .95rem; padding: 4px 12px; }
+.alertbox { display: grid; gap: 8px; margin: 12px 0; }
+.alertbox button { font: inherit; text-align: left; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 12px 14px; border-radius: 14px; border: 1px solid var(--warn); background: var(--warn-bg); color: var(--warn); font-weight: 700; cursor: pointer; }
+.alertbox button.ok { border-color: var(--ok); background: var(--ok-bg); color: var(--ok); }
+.editing-note { background: var(--gold-soft); border: 1px solid var(--gold); border-radius: 14px; padding: 10px 14px; font-weight: 700; }
 .ocard.gone { border-left-color: var(--bad); opacity: .8; }
 .ohead { display: flex; align-items: baseline; gap: 10px; }
 .onum { font-weight: 800; color: var(--gold); font-variant-numeric: tabular-nums; }
@@ -250,7 +260,7 @@ a.tel { color: inherit; font-weight: 600; }
   // ---------- data (all on this phone)
   function blank() {
     return { v: 1, kitchen: "Swadishtam", sales: {}, spent: [], items: [], buy: [], lastBackup: null,
-      orders: {}, prices: {}, outbox: [], sync: { last: null }, code: "", phoneName: "", server: "https://ntfy.sh", deviceId: null };
+      orders: {}, prices: {}, outbox: [], sync: { last: null }, code: "", phoneName: "", kitchenPhone: "9056564111", server: "https://ntfy.sh", deviceId: null };
   }
   function fix(d) {
     var b = blank(); for (var k in b) if (d[k] == null) d[k] = b[k];
@@ -330,7 +340,8 @@ a.tel { color: inherit; font-weight: 600; }
     U.editId = extra.id || null;
     U.day = extra.day || (view === "sales" || view === "spent" || view === "orders" ? today() : null);
     if (view === "report" || view === "history") U.month = extra.month || U.month || today().slice(0, 7);
-    if (view === "orders" && !extra.keepFilter) U.ofilter = "all";
+    if (view === "orders" && !extra.keepFilter) U.ofilter = extra.filter || "all";
+    if (view === "order" && !extra.edit && U.editOrder) { U.editOrder = null; U.cart = []; }
     render(); window.scrollTo(0, 0);
   }
   window.appBack = function () { if (U.view !== "home") { go("home"); return true; } return false; };
@@ -467,7 +478,7 @@ a.tel { color: inherit; font-weight: 600; }
       '<p class="lead">' + esc(new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })) + "</p>" + flashHtml();
     h += pending ? '<div class="flash bad">Please fill ' + pending + " thing" + (pending > 1 ? "s" : "") + " for today 👇</div>"
       : '<div class="flash ok">Everything is filled for today. Thank you! 👍</div>';
-    h += '<button type="button" class="btn take go" data-go="order">🛎️ Take an order</button>';
+    h += '<button type="button" class="btn take go" data-go="order">🛎️ Take an order</button>' + pendingBox();
     h += '<div class="tiles">' +
       tile("orders", "📋", "Today's Orders", null, td.os.count + " order" + (td.os.count === 1 ? "" : "s") + " · " + rs(td.os.total)) +
       tile("sales", "💰", "Today's Sales", td.filled, td.filled ? "✅ " + rs(td.sales) : "❌ Not filled") +
@@ -676,7 +687,9 @@ a.tel { color: inherit; font-weight: 600; }
     }
     h += "</div>";
     h += '<form class="card" data-form="settings"><h2>Kitchen name</h2><label for="kitchen">Name shown at the top and in reports</label>' +
-      '<input type="text" id="kitchen" name="kitchen" value="' + esc(D.kitchen) + '"><button class="btn big" type="submit">✓ Save name</button></form>';
+      '<input type="text" id="kitchen" name="kitchen" value="' + esc(D.kitchen) + '">' +
+      '<label for="kphone">Kitchen phone <span class="hint">Put in the messages sent to customers</span></label>' +
+      '<input type="tel" id="kphone" name="kphone" value="' + esc(D.kitchenPhone) + '"><button class="btn big" type="submit">✓ Save</button></form>';
     return h;
   };
 
@@ -758,12 +771,16 @@ a.tel { color: inherit; font-weight: 600; }
     Array.prototype.forEach.call(document.querySelectorAll(".chip"), function (b) { b.classList.toggle("on", b.dataset.cat === U.ocat); });
   }
   V.order = function () {
+    var ed = U.editOrder ? D.orders[U.editOrder] : null;
     var chips = '<button type="button" class="chip" data-act="cat" data-cat="">All</button>' + menuCats().map(function (c) {
       return '<button type="button" class="chip" data-act="cat" data-cat="' + esc(c) + '">' + esc(c) + "</button>"; }).join("");
-    return "<h1>🛎️ New Order</h1>" + flashHtml() + '<form data-form="order" id="orderform" class="stack">' +
+    return (ed ? "<h1>✏️ Change order #" + (orderNumbers(ed.date)[ed.id] || "") + "</h1>" : "<h1>🛎️ New Order</h1>") + flashHtml() +
+      (ed ? '<div class="editing-note">Changing ' + esc(ed.name || "Customer") + "’s order from " + esc(nice(ed.date).toLowerCase()) + ", " + esc(tm(ed.at)) +
+        '. Fix it and press Save changes. <button type="button" class="btn light sm" data-act="canceledit">Don’t change</button></div>' : "") +
+      '<form data-form="order" id="orderform" class="stack">' +
       '<div class="card" style="margin:0"><div class="row pair"><div class="grow"><label for="cname" style="margin-top:0">Name</label>' +
-      '<input type="text" id="cname" name="cname" autocomplete="off"></div><div class="grow"><label for="cmobile" style="margin-top:0">Mobile</label>' +
-      '<input type="tel" inputmode="tel" id="cmobile" name="cmobile" autocomplete="off" maxlength="15"></div></div></div>' +
+      '<input type="text" id="cname" name="cname" autocomplete="off" value="' + esc(ed ? ed.name : "") + '"></div><div class="grow"><label for="cmobile" style="margin-top:0">Mobile</label>' +
+      '<input type="tel" inputmode="tel" id="cmobile" name="cmobile" autocomplete="off" maxlength="15" value="' + esc(ed ? ed.mobile : "") + '"></div></div></div>' +
       '<div class="card" style="margin:0"><label for="msearch" style="margin-top:0">🔍 Find a dish</label>' +
       '<input type="search" id="msearch" autocomplete="off" placeholder="e.g. paneer, dal, naan, thali" value="' + esc(U.q) + '">' +
       '<div class="chips">' + chips + '</div><div id="results"></div>' +
@@ -773,11 +790,11 @@ a.tel { color: inherit; font-weight: 600; }
       '<button type="button" class="btn light" style="margin-top:10px" data-act="addcustom">Add to order</button></details></div>' +
       '<div class="card" style="margin:0"><h2 style="margin-top:0">This order</h2><div id="cart"></div>' +
       '<span class="label">Payment</span><div class="choices two">' +
-      '<input type="radio" name="paid" id="paidyes" value="yes" checked><label for="paidyes"><span class="icon" aria-hidden="true">✅</span>Payment done</label>' +
-      '<input type="radio" name="paid" id="paidno" value="no"><label for="paidno"><span class="icon" aria-hidden="true">⏳</span>Payment not done</label></div>' +
-      '<label for="onote">Note <span class="hint">Optional, e.g. “less spicy”, address</span></label><input type="text" id="onote" name="onote" autocomplete="off">' +
+      '<input type="radio" name="paid" id="paidyes" value="yes"' + (!ed || ed.paid ? " checked" : "") + '><label for="paidyes"><span class="icon" aria-hidden="true">✅</span>Payment done</label>' +
+      '<input type="radio" name="paid" id="paidno" value="no"' + (ed && !ed.paid ? " checked" : "") + '><label for="paidno"><span class="icon" aria-hidden="true">⏳</span>Payment not done</label></div>' +
+      '<label for="onote">Note <span class="hint">Optional, e.g. “less spicy”, address</span></label><input type="text" id="onote" name="onote" autocomplete="off" value="' + esc(ed ? ed.note : "") + '">' +
       '<div class="footer"><button type="button" class="btn red sm" data-act="clearcart">Clear order</button></div></div></form>' +
-      '<div class="savebar"><span id="stotal">₹0</span><button type="submit" form="orderform" class="btn go">✓ Save order</button></div>';
+      '<div class="savebar"><span id="stotal">₹0</span><button type="submit" form="orderform" class="btn go">' + (ed ? "✓ Save changes" : "✓ Save order") + "</button></div>";
   };
   V.orderAfter = function () { refreshOrder(); };
 
@@ -843,48 +860,120 @@ a.tel { color: inherit; font-weight: 600; }
       rows.map(function (r) { return "<tr><td>" + esc(r.name) + "</td><td>" + q(r.qty) + "</td><td>" + rs(r.amount) + "</td></tr>"; }).join("") +
       "</tbody><tfoot><tr><td>Total</td><td>" + q(tq) + "</td><td>" + rs(ta) + "</td></tr></tfoot></table></div>";
   }
+  // Orders from before "Delivered" existed count as delivered once their day is over.
+  function isDone(o) { return o.done === true || (o.done === undefined && o.date < today()); }
+  function phoneDigits(m) {
+    var d = String(m || "").replace(/\D/g, "");
+    if (d.length === 11 && d[0] === "0") d = d.slice(1);
+    return d.length === 10 ? "91" + d : d;
+  }
+  function orderText(o) {
+    var num = orderNumbers(o.date)[o.id] || "";
+    var lines = ["🧾 *" + D.kitchen + "* – Order #" + num,
+      "🕒 " + asDate(o.date).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) + ", " + tm(o.at),
+      "👤 " + (o.name || "Customer") + (o.mobile ? " · 📞 " + o.mobile : ""), ""];
+    (o.items || []).forEach(function (i) { lines.push(q(i.qty) + " × " + i.name + " = " + rs(i.qty * i.price)); });
+    lines.push("", "*Total: " + rs(o.total) + "*",
+      o.status !== "ok" ? "✕ Cancelled" : (isDone(o) ? "✅ Delivered" : "🍳 Pending") + " · " + (o.paid ? "💰 Payment done" : "⏳ Payment pending"));
+    if (o.note) lines.push("📝 " + o.note);
+    if (o.by) lines.push("Taken by " + o.by);
+    return lines.join("\n");
+  }
+  function customerText(o) {
+    var lines = ["Namaste " + (o.name || "") + " 🙏", "Thank you for ordering from " + D.kitchen + ".", ""];
+    (o.items || []).forEach(function (i) { lines.push(q(i.qty) + " × " + i.name); });
+    lines.push("", "Total: " + rs(o.total) + (o.paid ? " (paid, thank you)" : " (to pay)"),
+      isDone(o) ? "Your order has been delivered. Enjoy your meal!" : "Your order is being prepared.");
+    if (D.kitchenPhone) lines.push("For any help call " + D.kitchenPhone + ".");
+    return lines.join("\n");
+  }
   function orderCard(o, num, now) {
-    var gone = o.status !== "ok";
-    var h = '<li class="ocard' + (gone ? " gone" : o.paid ? " paid" : "") + '"><div class="ohead"><span class="onum">#' + num + "</span>" +
+    var gone = o.status !== "ok", done = isDone(o);
+    var h = '<li class="ocard' + (gone ? " gone" : o.paid && done ? " paid" : "") + '"><div class="ohead"><span class="onum">#' + num + "</span>" +
       '<span class="oname">' + esc(o.name || "Customer") + '</span><span class="oamt">' + rs(o.total) + "</span></div>" +
       '<div class="items">' + esc(itemsText(o)) + "</div><div class=\"pills\">" +
       '<span class="pill taken">🕒 Taken ' + esc(tm(o.at)) + "</span>" +
       (gone ? '<span class="pill gone">✕ Cancelled' + (o.cancelledAt ? " " + esc(tm(o.cancelledAt)) : "") + "</span>"
-        : o.paid ? '<span class="pill paid">✓ Payment done' + (o.paidAt ? " " + esc(tm(o.paidAt)) : "") + "</span>"
-        : '<span class="pill unpaid">⏳ Payment not done</span>') + "</div>";
+        : (done ? '<span class="pill done">✅ Delivered' + (o.doneAt ? " " + esc(tm(o.doneAt)) : "") + "</span>" : '<span class="pill pending">🍳 Pending</span>') +
+          (o.paid ? '<span class="pill paid">💰 Payment done' + (o.paidAt ? " " + esc(tm(o.paidAt)) : "") + "</span>" : '<span class="pill unpaid">⏳ Payment pending</span>')) +
+      "</div>";
     var meta = [];
     if (o.mobile) meta.push('<a class="tel" href="tel:' + esc(o.mobile) + '">📞 ' + esc(o.mobile) + "</a>");
     if (o.by) meta.push("by " + esc(o.by));
+    if (o.editedAt) meta.push("changed " + esc(tm(o.editedAt)));
     if (o.note) meta.push(esc(o.note));
     if (meta.length) h += '<div class="ometa muted small">' + meta.join(" · ") + "</div>";
     if (!gone) {
-      h += '<div class="oacts">' + (o.paid
-        ? '<button type="button" class="btn light sm" data-act="unpaid" data-id="' + o.id + '">Mark payment not done</button>'
-        : '<button type="button" class="btn go sm" data-act="gotpaid" data-id="' + o.id + '">✓ Payment done</button>') +
-        (now - o.at < UNDO_MS ? '<button type="button" class="btn red sm" data-act="undo" data-id="' + o.id + '">↩️ Undo</button>' : removeBtn("order:" + o.id, "Cancel order")) +
-        "</div>";
+      h += '<div class="oacts">' +
+        (done ? '<button type="button" class="btn light sm" data-act="undone" data-id="' + o.id + '">Mark pending</button>'
+          : '<button type="button" class="btn go sm" data-act="done" data-id="' + o.id + '">✅ Delivered</button>') +
+        (o.paid ? '<button type="button" class="btn light sm" data-act="unpaid" data-id="' + o.id + '">Mark payment pending</button>'
+          : '<button type="button" class="btn go sm" data-act="gotpaid" data-id="' + o.id + '">💰 Payment done</button>') +
+        (now - o.at < UNDO_MS ? '<button type="button" class="btn red sm" data-act="undo" data-id="' + o.id + '">↩️ Undo</button>' : "") + "</div>";
     }
+    h += '<div class="oacts second"><button type="button" class="btn wa" data-act="shareorder" data-id="' + o.id + '">📤 Share</button>';
+    if (o.mobile && !gone) {
+      h += '<a class="btn light" href="sms:' + esc(o.mobile) + "?body=" + encodeURIComponent(customerText(o)) + '">💬 SMS</a>' +
+        '<a class="btn light" href="https://wa.me/' + phoneDigits(o.mobile) + "?text=" + encodeURIComponent(customerText(o)) + '" target="_blank" rel="noopener">🟢 WhatsApp</a>';
+    }
+    if (!gone) h += '<button type="button" class="btn light" data-act="editorder" data-id="' + o.id + '">✏️ Edit</button>';
+    h += removeBtn("order:" + o.id, "🗑 Delete") + "</div>";
     return h + "</li>";
   }
+  // All orders still pending (any day) and all payments still pending (any day).
+  function pendingLists() {
+    var all = Object.keys(D.orders).map(function (k) { return D.orders[k]; })
+      .filter(function (o) { return o.status === "ok" && !o.ghost; })
+      .sort(function (a, b) { return b.at - a.at; });
+    return { orders: all.filter(function (o) { return !isDone(o); }), pay: all.filter(function (o) { return !o.paid; }) };
+  }
+  function pendingBox() {
+    var p = pendingLists(), amt = p.pay.reduce(function (s, o) { return s + Number(o.total || 0); }, 0);
+    if (!p.orders.length && !p.pay.length) return '<div class="alertbox"><button type="button" class="ok" data-go="pending">✅ No pending orders or payments</button></div>';
+    return '<div class="alertbox">' +
+      (p.orders.length ? '<button type="button" data-go="pending">🍳 ' + p.orders.length + " order" + (p.orders.length === 1 ? "" : "s") + " pending <span>›</span></button>" : "") +
+      (p.pay.length ? '<button type="button" data-go="pending">⏳ Payment pending: ' + p.pay.length + " · " + rs(amt) + " <span>›</span></button>" : "") + "</div>";
+  }
+  V.pending = function () {
+    var p = pendingLists(), now = Date.now(), amt = p.pay.reduce(function (s, o) { return s + Number(o.total || 0); }, 0);
+    function cards(list) {
+      return '<ul class="olist">' + list.map(function (o) {
+        return orderCard(o, (orderNumbers(o.date)[o.id] || "") + (o.date !== today() ? " · " + nice(o.date) : ""), now);
+      }).join("") + "</ul>";
+    }
+    var h = "<h1>⏳ Pending</h1>" + flashHtml();
+    h += "<h2>🍳 Orders not delivered (" + p.orders.length + ")</h2>" + (p.orders.length ? cards(p.orders) : '<p class="muted">None. 👍</p>');
+    h += "<h2>💰 Payments pending (" + p.pay.length + " · " + rs(amt) + ")</h2>" + (p.pay.length ? cards(p.pay) : '<p class="muted">None. 👍</p>');
+    return h;
+  };
   V.orders = function () {
     var all = ordersOn(U.day), st = orderStats(all), now = Date.now(), nums = orderNumbers(U.day), f = U.ofilter || "all";
-    var count = { all: all.length, unpaid: 0, paid: 0, gone: 0 };
-    all.forEach(function (o) { if (o.status !== "ok") count.gone++; else if (o.paid) count.paid++; else count.unpaid++; });
+    var count = { all: all.length, pending: 0, unpaid: 0, paid: 0, gone: 0 };
+    all.forEach(function (o) {
+      if (o.status !== "ok") { count.gone++; return; }
+      if (!isDone(o)) count.pending++;
+      if (o.paid) count.paid++; else count.unpaid++;
+    });
     var list = all.filter(function (o) {
-      return f === "all" || (f === "gone" ? o.status !== "ok" : o.status === "ok" && (f === "paid" ? o.paid : !o.paid));
+      if (f === "all") return true;
+      if (f === "gone") return o.status !== "ok";
+      if (o.status !== "ok") return false;
+      return f === "pending" ? !isDone(o) : f === "paid" ? o.paid : !o.paid;
     });
     var h = '<div class="row" style="justify-content:space-between"><h1>📋 Orders: ' + esc(nice(U.day)) + "</h1>" +
       '<button type="button" class="btn light sm" data-go="history">📅 Past days</button></div>' + dayPicker() + flashHtml() + netLine();
     var recent = U.lastOrder && D.orders[U.lastOrder];
     if (recent && recent.status === "ok" && now - recent.at < UNDO_MS) {
       h += '<div class="flash ok">Order #' + (nums[recent.id] || "") + " saved ✅ " + esc(recent.name || "Customer") + " · " + rs(recent.total) +
-        '<div class="row" style="margin-top:8px"><button type="button" class="btn red" data-act="undo" data-id="' + recent.id + '">↩️ Undo this order</button></div></div>';
+        '<div class="row" style="margin-top:8px"><button type="button" class="btn wa" data-act="shareorder" data-id="' + recent.id + '">📤 Share to WhatsApp group</button>' +
+        '<button type="button" class="btn red" data-act="undo" data-id="' + recent.id + '">↩️ Undo</button></div></div>';
     }
-    if (U.day === today()) h += '<button type="button" class="btn take go" data-go="order">🛎️ Take an order</button>';
+    if (U.day === today()) h += '<button type="button" class="btn take go" data-go="order">🛎️ Take an order</button>' + pendingBox();
     h += '<div class="stats" style="margin-top:14px">' + stat("Orders", q(st.count)) + stat("Total", rs(st.total)) +
-      stat("Payment done", rs(st.paid)) + stat("Payment not done", rs(st.unpaid), st.unpaid ? "neg" : "") + "</div>";
+      stat("Payment done", rs(st.paid)) + stat("Payment pending", rs(st.unpaid), st.unpaid ? "neg" : "") + "</div>";
     if (!all.length) return h + '<p class="muted">No orders for ' + esc(nice(U.day).toLowerCase()) + ".</p>";
-    h += '<div class="ofilter">' + [["all", "All"], ["unpaid", "⏳ Not paid"], ["paid", "✓ Paid"], ["gone", "✕ Cancelled"]].map(function (c) {
+    h += '<div class="ofilter">' + [["all", "All"], ["pending", "🍳 Pending"], ["unpaid", "⏳ Payment pending"], ["paid", "💰 Paid"]]
+      .concat(count.gone ? [["gone", "✕ Cancelled"]] : []).map(function (c) {
       return '<button type="button" class="chip' + (f === c[0] ? " on" : "") + '" data-act="ofilter" data-f="' + c[0] + '">' + c[1] + " (" + count[c[0]] + ")</button>";
     }).join("") + "</div>";
     h += list.length ? '<ul class="olist">' + list.map(function (o) { return orderCard(o, nums[o.id], now); }).join("") + "</ul>"
@@ -924,7 +1013,7 @@ a.tel { color: inherit; font-weight: 600; }
       "<h1>📅 " + esc(monthName(ym)) + "</h1>" +
       '<button type="button" class="btn light sm" data-act="hmonth" data-n="1" aria-label="Next month"' + (ym >= cur ? " disabled" : "") + ">▶</button></div>" + flashHtml();
     h += '<div class="stats">' + stat("Orders", q(t.count)) + stat("Dishes", q(t.items)) + stat("Total", rs(t.total)) +
-      stat("Payment done", rs(t.paid)) + stat("Payment not done", rs(t.unpaid), t.unpaid ? "neg" : "") + stat("Days with orders", q(rows.length)) + "</div>";
+      stat("Payment done", rs(t.paid)) + stat("Payment pending", rs(t.unpaid), t.unpaid ? "neg" : "") + stat("Days with orders", q(rows.length)) + "</div>";
     if (!rows.length) return h + '<p class="muted">No orders in this month.</p>';
     h += '<h2>Day by day</h2><p class="muted small">Tap a day to see its orders and dishes.</p><div class="table-wrap"><table>' +
       "<thead><tr><th>Day</th><th>Orders</th><th>Dishes</th><th>Total</th><th>Paid</th><th>Not paid</th></tr></thead><tbody>" +
@@ -1013,6 +1102,9 @@ a.tel { color: inherit; font-weight: 600; }
       return true;
     }
     if (ev.t === "undo" && o.status !== "deleted") { o.status = "deleted"; return true; }
+    if (ev.t === "edit" && ev.o && o.status !== "deleted" && (ev.o.editedAt || 0) >= (o.editedAt || 0)) { D.orders[ev.id] = ev.o; return true; }
+    if (ev.t === "done" && !o.done) { o.done = true; o.doneAt = ev.at; return true; }
+    if (ev.t === "undone" && o.done !== false) { o.done = false; o.doneAt = null; return true; }
     if (ev.t === "cancel" && o.status === "ok") { o.status = "cancelled"; o.cancelledAt = ev.at; return true; }
     if (ev.t === "paid" && !o.paid) { o.paid = true; o.paidAt = ev.at; return true; }
     if (ev.t === "unpaid" && o.paid) { o.paid = false; o.paidAt = null; return true; }
@@ -1113,11 +1205,25 @@ a.tel { color: inherit; font-weight: 600; }
       var noPrice = U.cart.find(function (c) { return !(Number(c.price) > 0); });
       if (noPrice) throw new Error("Please type the price (MRP) for " + noPrice.name + ".");
       var items = U.cart.map(function (c) {
-        return { name: c.label && c.label !== "MRP" ? c.name + " (" + c.label + ")" : c.name, qty: c.qty, price: Number(c.price), dish: c.dish || null };
+        return { name: c.label && c.label !== "MRP" ? c.name + " (" + c.label + ")" : c.name, qty: c.qty, price: Number(c.price), dish: c.dish || null,
+          base: c.name, label: c.label || "", ask: !!c.ask };
       });
       var total = cartTotal();
       var mobile = f.cmobile.value.replace(/[^0-9+]/g, "");
       if (mobile && mobile.replace(/\D/g, "").length < 10) throw new Error("The mobile number looks too short. Please check it.");
+      var paidNow = f.querySelector("input[name=paid]:checked").value === "yes";
+      var ed = U.editOrder ? D.orders[U.editOrder] : null;
+      if (ed) {
+        if (paidNow && !ed.paid) ed.paidAt = Date.now();
+        if (!paidNow) ed.paidAt = null;
+        ed.name = f.cname.value.trim(); ed.mobile = mobile; ed.items = items; ed.total = total; ed.paid = paidNow;
+        ed.note = f.onote.value.trim(); ed.editedAt = Date.now();
+        save(); sendEvent({ t: "edit", id: ed.id, o: ed });
+        U.cart = []; U.q = ""; U.ocat = ""; U.editOrder = null;
+        say("ok", "Order changed ✅ " + (ed.name || "Customer") + " · " + rs(total));
+        go("orders", { day: ed.date });
+        return;
+      }
       var o = { id: newId(), date: today(), at: Date.now(), name: f.cname.value.trim(), mobile: mobile, items: items, total: total,
         paid: f.querySelector("input[name=paid]:checked").value === "yes", note: f.onote.value.trim(), status: "ok", by: D.phoneName || "" };
       if (o.paid) o.paidAt = o.at;
@@ -1204,7 +1310,7 @@ a.tel { color: inherit; font-weight: 600; }
     settings: function (f) {
       var name = f.kitchen.value.trim();
       if (!name) throw new Error("Please type the kitchen name.");
-      D.kitchen = name; save(); say("ok", "Saved ✅"); go("settings");
+      D.kitchen = name; D.kitchenPhone = f.kphone.value.trim(); save(); say("ok", "Saved ✅"); go("settings");
     }
   };
 
@@ -1241,6 +1347,36 @@ a.tel { color: inherit; font-weight: 600; }
       U.cart = []; refreshOrder();
       b.classList.remove("armed"); b.textContent = "Clear order";
     },
+    done: function (b) {
+      var o = D.orders[b.dataset.id];
+      if (!o) return;
+      o.done = true; o.doneAt = Date.now(); save();
+      sendEvent({ t: "done", id: o.id, at: o.doneAt });
+      say("ok", "Delivered ✅ " + (o.name || "Customer")); render();
+    },
+    undone: function (b) {
+      var o = D.orders[b.dataset.id];
+      if (!o) return;
+      o.done = false; o.doneAt = null; save();
+      sendEvent({ t: "undone", id: o.id });
+      say("ok", "Marked pending: " + (o.name || "Customer")); render();
+    },
+    shareorder: function (b) { var o = D.orders[b.dataset.id]; if (o) shareText(orderText(o)); },
+    editorder: function (b) {
+      var o = D.orders[b.dataset.id];
+      if (!o) return;
+      U.editOrder = o.id; U.q = ""; U.ocat = "";
+      U.cart = (o.items || []).map(function (i) {
+        var label = i.label != null ? i.label : ((/\(([^)]*)\)$/.exec(i.name) || [])[1] || "");
+        var base = i.base || (label ? i.name.replace(/\s*\([^)]*\)$/, "") : i.name);
+        var dish = i.dish && (D.menu || []).find(function (d) { return d.id === i.dish; });
+        if (dish && !dish.opts.some(function (op) { return op.label === label; })) { label = ""; base = i.name; }
+        return { key: dish ? dish.id + "|" + label : "x|" + newId(), dish: dish ? dish.id : null, name: base, label: label,
+          price: Number(i.price), ask: !!i.ask, qty: Number(i.qty) };
+      });
+      go("order", { edit: true });
+    },
+    canceledit: function () { U.editOrder = null; U.cart = []; go("orders", { day: U.day || today() }); },
     undo: function (b) {
       var o = D.orders[b.dataset.id];
       if (!o) return;
@@ -1276,7 +1412,12 @@ a.tel { color: inherit; font-weight: 600; }
       var i = key.indexOf(":"), kind = key.slice(0, i), id = key.slice(i + 1);
       if (kind === "order") {
         var o = D.orders[id];
-        if (o) { o.status = "cancelled"; o.cancelledAt = Date.now(); save(); sendEvent({ t: "cancel", id: id, date: o.date, name: o.name, total: o.total, at: o.cancelledAt }); say("ok", "Order cancelled."); go("orders", { day: o.date }); }
+        if (o) {
+          o.status = "deleted"; save();
+          sendEvent({ t: "undo", id: id, date: o.date, name: o.name, total: o.total });
+          say("ok", "Order deleted 🗑 " + (o.name || "Customer") + " · " + rs(o.total));
+          if (U.view === "pending") render(); else go("orders", { day: o.date, keepFilter: true });
+        }
         return;
       }
       if (kind === "dish") {

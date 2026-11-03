@@ -157,11 +157,11 @@ public class OrderAlertService extends Service {
     private void notifyFor(JSONObject ev) {
         String t = ev.optString("t");
         String title, body;
-        if ("order".equals(t)) {
+        if ("order".equals(t) || "edit".equals(t)) {
             JSONObject o = ev.optJSONObject("o");
             if (o == null) return;
             String name = o.optString("name", "");
-            title = "🛎️ New order · " + (name.isEmpty() ? "Customer" : name) + " · " + rupees(o.optDouble("total", 0));
+            title = ("edit".equals(t) ? "✏️ Order changed · " : "🛎️ New order · ") + (name.isEmpty() ? "Customer" : name) + " · " + rupees(o.optDouble("total", 0));
             StringBuilder sb = new StringBuilder();
             JSONArray items = o.optJSONArray("items");
             for (int i = 0; items != null && i < items.length(); i++) {
@@ -170,7 +170,7 @@ public class OrderAlertService extends Service {
                 if (sb.length() > 0) sb.append(", ");
                 sb.append(qty(it.optDouble("qty", 1))).append("× ").append(it.optString("name"));
             }
-            if (!o.optBoolean("paid", true)) sb.append(" · pay later");
+            if (!o.optBoolean("paid", true)) sb.append(" · payment pending");
             String mobile = o.optString("mobile", "");
             if (!mobile.isEmpty()) sb.append(" · ").append(mobile);
             String by = ev.optString("by", "");
@@ -178,8 +178,8 @@ public class OrderAlertService extends Service {
             body = sb.toString();
         } else if ("cancel".equals(t) || "undo".equals(t)) {
             String name = ev.optString("name", "");
-            title = "❌ Order cancelled · " + (name.isEmpty() ? "Customer" : name);
-            body = rupees(ev.optDouble("total", 0)) + ("undo".equals(t) ? " · removed right after taking it" : "");
+            title = ("undo".equals(t) ? "🗑 Order deleted · " : "❌ Order cancelled · ") + (name.isEmpty() ? "Customer" : name);
+            body = rupees(ev.optDouble("total", 0));
         } else {
             return;   // payments etc. don't need a notification
         }
