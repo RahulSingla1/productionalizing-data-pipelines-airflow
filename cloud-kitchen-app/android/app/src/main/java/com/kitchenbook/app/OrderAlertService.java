@@ -72,7 +72,7 @@ public class OrderAlertService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Notification ongoing = new NotificationCompat.Builder(this, CH_QUIET)
                 .setSmallIcon(R.drawable.ic_stat_order)
-                .setContentTitle("Kitchen Book is ready for orders")
+                .setContentTitle("Swadishtam is ready for orders")
                 .setContentIntent(openApp())
                 .setOngoing(true)
                 .setPriority(NotificationCompat.PRIORITY_MIN)

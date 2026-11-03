@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Orange square with a white cooking pot. -->
+<!-- Swadishtam green tile with a gold ring and a cooking pot. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-    <path android:fillColor="#D9480F" android:pathData="M20,0h68a20,20 0 0 1 20,20v68a20,20 0 0 1 -20,20h-68a20,20 0 0 1 -20,-20v-68a20,20 0 0 1 20,-20z" />
-    <path android:fillColor="#FFFFFF" android:pathData="M28,50h52v14a16,16 0 0 1 -16,16h-20a16,16 0 0 1 -16,-16z" />
-    <path android:fillColor="#FFD8A8" android:pathData="M22,46h64a3,3 0 0 1 0,6h-64a3,3 0 0 1 0,-6z" />
-    <path android:fillColor="#FFFFFF" android:pathData="M48,36h12a3,3 0 0 1 0,6h-12a3,3 0 0 1 0,-6z" />
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <path android:fillColor="#0F3D26" android:pathData="M112,0h288a112,112 0 0 1 112,112v288a112,112 0 0 1 -112,112h-288a112,112 0 0 1 -112,-112v-288a112,112 0 0 1 112,-112z" />
+    <path android:strokeColor="#C9A03F" android:strokeWidth="14" android:fillColor="#00000000" android:pathData="M256,60a196,196 0 1 1 0,392a196,196 0 1 1 0,-392z" />
+    <path android:fillColor="#F3D98B" android:pathData="M146,262h220v26c0,48 -39,88 -88,88h-44c-49,0 -88,-40 -88,-88z" />
+    <path android:fillColor="#C9A03F" android:pathData="M128,250h256a10,10 0 0 1 0,20h-256a10,10 0 0 1 0,-20z" />
+    <path android:fillColor="#F3D98B" android:pathData="M226,214h60a10,10 0 0 1 0,20h-60a10,10 0 0 1 0,-20z" />
+    <path android:strokeColor="#F3D98B" android:strokeWidth="10" android:strokeLineCap="round" android:fillColor="#00000000" android:pathData="M214,176c0,-18 18,-22 18,-40M256,176c0,-18 18,-22 18,-40M298,176c0,-18 18,-22 18,-40" />
 </vector>

@@ -3,22 +3,32 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#d9480f">
-<title>Kitchen Book</title>
+<meta name="theme-color" content="#0f3d26">
+<title>Swadishtam · Kitchen Book</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Swadishtam">
 <style>
-/* Kitchen Book: works fully offline. Everything is stored on this phone. */
+/* Swadishtam Kitchen Book. Works offline; everything is stored on this device.
+   Look: the restaurant's own deep green and gold, cream paper, Mukta type. */
+@font-face { font-family: "Mukta"; font-weight: 400; font-display: swap; src: url(fonts/mukta-latin-400-normal.woff2) format("woff2"); }
+@font-face { font-family: "Mukta"; font-weight: 600; font-display: swap; src: url(fonts/mukta-latin-600-normal.woff2) format("woff2"); }
+@font-face { font-family: "Mukta"; font-weight: 700; font-display: swap; src: url(fonts/mukta-latin-700-normal.woff2) format("woff2"); }
+@font-face { font-family: "Mukta"; font-weight: 800; font-display: swap; src: url(fonts/mukta-latin-800-normal.woff2) format("woff2"); }
 :root {
-  --bg: #fbf8f4; --card: #ffffff; --fg: #1d1a17; --muted: #6c645b; --line: #e6dccf;
-  --brand: #d9480f; --brand-ink: #ffffff; --brand-soft: #fff0e6;
-  --ok: #1d7a36; --ok-bg: #e4f4e8; --bad: #c0262d; --bad-bg: #fcebec; --focus: #d9480f;
-  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Noto Sans Devanagari", sans-serif;
+  --bg: #f7f4ec; --card: #ffffff; --fg: #17221b; --muted: #5f6b62; --line: #e2dccb;
+  --brand: #0f3d26; --brand-ink: #ffffff; --brand-soft: #e6efe8; --gold: #b38728; --gold-soft: #f6eedb;
+  --ok: #17803d; --ok-bg: #e3f3e8; --warn: #a15c00; --warn-bg: #fdf0d9; --bad: #b42318; --bad-bg: #fdecea; --focus: #b38728;
+  --font: "Mukta", system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Noto Sans Devanagari", sans-serif;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #171412; --card: #221e1b; --fg: #f3ede6; --muted: #b3a89c; --line: #3a332d;
-    --brand: #f76707; --brand-ink: #1a0f08; --brand-soft: #3a2416;
-    --ok: #63c27f; --ok-bg: #18301f; --bad: #ff8087; --bad-bg: #3a1c1e; --focus: #ff922b;
+    --bg: #0f1612; --card: #18221c; --fg: #eef3ef; --muted: #a7b4ab; --line: #2c3a31;
+    --brand: #1f6b44; --brand-ink: #ffffff; --brand-soft: #1b2e23; --gold: #e0b75a; --gold-soft: #33291a;
+    --ok: #5cc685; --ok-bg: #15301f; --warn: #f0b35a; --warn-bg: #33261a; --bad: #ff8a80; --bad-bg: #3a1d1b; --focus: #e0b75a;
     color-scheme: dark;
   }
 }
@@ -29,7 +39,10 @@ body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--fo
 .top { position: sticky; top: 0; z-index: 5; background: var(--brand); color: var(--brand-ink);
   display: flex; align-items: center; gap: 10px;
   padding: calc(10px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px)); }
-.top .name { flex: 1; font-weight: 800; font-size: 1.1rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.top { border-bottom: 3px solid var(--gold); }
+.brandmark { flex: 1; min-width: 0; line-height: 1.1; }
+.top .name { font-weight: 800; font-size: 1.2rem; letter-spacing: .01em; color: #f3d98b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.top .sub { font-size: .72rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; opacity: .85; }
 .top button { font: inherit; font-weight: 700; color: var(--brand-ink); background: transparent;
   border: 2px solid currentColor; border-radius: 12px; padding: 4px 14px; min-height: 44px; cursor: pointer; }
 main { max-width: 760px; margin: 0 auto;
@@ -49,8 +62,8 @@ h2 { font-size: 1.2rem; margin: 26px 0 10px; }
 .tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
 @media (min-width: 640px) { .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .tile { font: inherit; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-  text-align: center; min-height: 128px; padding: 12px; border-radius: 18px; background: var(--card); color: var(--fg);
-  border: 2px solid var(--line); font-weight: 700; font-size: 1.1rem; cursor: pointer; }
+  text-align: center; min-height: 120px; padding: 12px; border-radius: 16px; background: var(--card); color: var(--fg);
+  border: 1px solid var(--line); box-shadow: 0 1px 2px rgba(15, 61, 38, .06); font-weight: 700; font-size: 1.08rem; cursor: pointer; }
 .tile .icon { font-size: 2.4rem; line-height: 1.15; }
 .tile .state { font-size: .85rem; font-weight: 600; color: var(--muted); }
 .tile.todo { border-color: var(--bad); background: var(--bad-bg); }
@@ -147,8 +160,27 @@ tfoot td { font-weight: 800; border-bottom: 0; }
 .badge.later { background: var(--brand-soft); color: var(--brand); }
 .badge.gone { background: var(--bad-bg); color: var(--bad); }
 .order.gone .what, .order.gone .items { text-decoration: line-through; opacity: .7; }
+.olist { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 10px; }
+.ocard { background: var(--card); border: 1px solid var(--line); border-left: 5px solid var(--warn); border-radius: 14px; padding: 12px 14px; }
+.ocard.paid { border-left-color: var(--ok); }
+.ocard.gone { border-left-color: var(--bad); opacity: .8; }
+.ohead { display: flex; align-items: baseline; gap: 10px; }
+.onum { font-weight: 800; color: var(--gold); font-variant-numeric: tabular-nums; }
+.oname { font-weight: 700; font-size: 1.1rem; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.oamt { font-weight: 800; font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.ocard.gone .oname, .ocard.gone .oamt, .ocard.gone .items { text-decoration: line-through; }
+.ocard .items { margin: 4px 0 8px; }
+.pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.pill { display: inline-flex; align-items: center; gap: 4px; font-size: .82rem; font-weight: 700; border-radius: 999px; padding: 2px 10px; }
+.pill.taken { background: var(--brand-soft); color: var(--brand); }
+.pill.paid { background: var(--ok-bg); color: var(--ok); }
+.pill.unpaid { background: var(--warn-bg); color: var(--warn); }
+.pill.gone { background: var(--bad-bg); color: var(--bad); }
+.ometa { margin-top: 6px; }
+.oacts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.ofilter { display: flex; gap: 8px; overflow-x: auto; padding: 12px 2px 2px; scrollbar-width: none; }
 .order .items { margin-top: 2px; }
-.order a.tel { color: inherit; font-weight: 600; }
+a.tel { color: inherit; font-weight: 600; }
 .code { font-family: ui-monospace, "Roboto Mono", monospace; font-size: 1.5rem; font-weight: 800; letter-spacing: .05em;
   padding: 10px 14px; border-radius: 12px; background: var(--bg); border: 2px dashed var(--line); user-select: all; text-align: center; }
 .chips { display: flex; gap: 8px; overflow-x: auto; padding: 10px 2px 4px; scrollbar-width: none; }
@@ -197,7 +229,7 @@ tfoot td { font-weight: 800; border-bottom: 0; }
 </head>
 <body>
 <header class="top">
-  <div class="name" id="kname">🍳 Kitchen Book</div>
+  <div class="brandmark"><div class="name" id="kname">Swadishtam</div><div class="sub">Pure Veg · Kitchen Book</div></div>
   <button type="button" id="homeBtn" data-go="home" hidden>🏠 Home</button>
 </header>
 <main id="app"></main>
@@ -217,11 +249,12 @@ tfoot td { font-weight: 800; border-bottom: 0; }
 
   // ---------- data (all on this phone)
   function blank() {
-    return { v: 1, kitchen: "My Cloud Kitchen", sales: {}, spent: [], items: [], buy: [], lastBackup: null,
+    return { v: 1, kitchen: "Swadishtam", sales: {}, spent: [], items: [], buy: [], lastBackup: null,
       orders: {}, prices: {}, outbox: [], sync: { last: null }, code: "", phoneName: "", server: "https://ntfy.sh", deviceId: null };
   }
   function fix(d) {
     var b = blank(); for (var k in b) if (d[k] == null) d[k] = b[k];
+    if (d.kitchen === "My Cloud Kitchen") d.kitchen = "Swadishtam";
     if (!d.deviceId) d.deviceId = Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
     return d;
   }
@@ -296,7 +329,8 @@ tfoot td { font-weight: 800; border-bottom: 0; }
     U.view = view; U.armed = null; U.restore = null; U.dirty = false;
     U.editId = extra.id || null;
     U.day = extra.day || (view === "sales" || view === "spent" || view === "orders" ? today() : null);
-    if (view === "report") U.month = extra.month || U.month || today().slice(0, 7);
+    if (view === "report" || view === "history") U.month = extra.month || U.month || today().slice(0, 7);
+    if (view === "orders" && !extra.keepFilter) U.ofilter = "all";
     render(); window.scrollTo(0, 0);
   }
   window.appBack = function () { if (U.view !== "home") { go("home"); return true; } return false; };
@@ -739,8 +773,8 @@ tfoot td { font-weight: 800; border-bottom: 0; }
       '<button type="button" class="btn light" style="margin-top:10px" data-act="addcustom">Add to order</button></details></div>' +
       '<div class="card" style="margin:0"><h2 style="margin-top:0">This order</h2><div id="cart"></div>' +
       '<span class="label">Payment</span><div class="choices two">' +
-      '<input type="radio" name="paid" id="paidyes" value="yes" checked><label for="paidyes"><span class="icon" aria-hidden="true">💵</span>Paid now</label>' +
-      '<input type="radio" name="paid" id="paidno" value="no"><label for="paidno"><span class="icon" aria-hidden="true">⏳</span>Will pay later</label></div>' +
+      '<input type="radio" name="paid" id="paidyes" value="yes" checked><label for="paidyes"><span class="icon" aria-hidden="true">✅</span>Payment done</label>' +
+      '<input type="radio" name="paid" id="paidno" value="no"><label for="paidno"><span class="icon" aria-hidden="true">⏳</span>Payment not done</label></div>' +
       '<label for="onote">Note <span class="hint">Optional, e.g. “less spicy”, address</span></label><input type="text" id="onote" name="onote" autocomplete="off">' +
       '<div class="footer"><button type="button" class="btn red sm" data-act="clearcart">Clear order</button></div></div></form>' +
       '<div class="savebar"><span id="stotal">₹0</span><button type="submit" form="orderform" class="btn go">✓ Save order</button></div>';
@@ -780,33 +814,127 @@ tfoot td { font-weight: 800; border-bottom: 0; }
 
   var UNDO_MS = 2 * 60 * 1000;
   function itemsText(o) { return (o.items || []).map(function (i) { return q(i.qty) + "× " + i.name; }).join(", "); }
+  function tm(ts) { return new Date(ts).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" }); }
+  // Order numbers count up through the day, in the order they were taken (same on every phone).
+  function orderNumbers(d) {
+    var n = {};
+    Object.keys(D.orders).map(function (k) { return D.orders[k]; })
+      .filter(function (o) { return o.date === d && o.status !== "deleted" && !o.ghost; })
+      .sort(function (a, b) { return a.at - b.at; })
+      .forEach(function (o, i) { n[o.id] = i + 1; });
+    return n;
+  }
+  function itemsSold(list) {
+    var m = {};
+    list.forEach(function (o) {
+      if (o.status !== "ok") return;
+      (o.items || []).forEach(function (i) {
+        var r = m[i.name] || (m[i.name] = { name: i.name, qty: 0, amount: 0 });
+        r.qty += Number(i.qty || 0); r.amount += Number(i.qty || 0) * Number(i.price || 0);
+      });
+    });
+    return Object.keys(m).map(function (k) { return m[k]; }).sort(function (a, b) { return b.qty - a.qty || b.amount - a.amount; });
+  }
+  function itemsTable(rows) {
+    if (!rows.length) return '<p class="muted">No dishes sold.</p>';
+    var tq = 0, ta = 0;
+    rows.forEach(function (r) { tq += r.qty; ta += r.amount; });
+    return '<div class="table-wrap"><table><thead><tr><th>Dish</th><th>Qty</th><th>Amount</th></tr></thead><tbody>' +
+      rows.map(function (r) { return "<tr><td>" + esc(r.name) + "</td><td>" + q(r.qty) + "</td><td>" + rs(r.amount) + "</td></tr>"; }).join("") +
+      "</tbody><tfoot><tr><td>Total</td><td>" + q(tq) + "</td><td>" + rs(ta) + "</td></tr></tfoot></table></div>";
+  }
+  function orderCard(o, num, now) {
+    var gone = o.status !== "ok";
+    var h = '<li class="ocard' + (gone ? " gone" : o.paid ? " paid" : "") + '"><div class="ohead"><span class="onum">#' + num + "</span>" +
+      '<span class="oname">' + esc(o.name || "Customer") + '</span><span class="oamt">' + rs(o.total) + "</span></div>" +
+      '<div class="items">' + esc(itemsText(o)) + "</div><div class=\"pills\">" +
+      '<span class="pill taken">🕒 Taken ' + esc(tm(o.at)) + "</span>" +
+      (gone ? '<span class="pill gone">✕ Cancelled' + (o.cancelledAt ? " " + esc(tm(o.cancelledAt)) : "") + "</span>"
+        : o.paid ? '<span class="pill paid">✓ Payment done' + (o.paidAt ? " " + esc(tm(o.paidAt)) : "") + "</span>"
+        : '<span class="pill unpaid">⏳ Payment not done</span>') + "</div>";
+    var meta = [];
+    if (o.mobile) meta.push('<a class="tel" href="tel:' + esc(o.mobile) + '">📞 ' + esc(o.mobile) + "</a>");
+    if (o.by) meta.push("by " + esc(o.by));
+    if (o.note) meta.push(esc(o.note));
+    if (meta.length) h += '<div class="ometa muted small">' + meta.join(" · ") + "</div>";
+    if (!gone) {
+      h += '<div class="oacts">' + (o.paid
+        ? '<button type="button" class="btn light sm" data-act="unpaid" data-id="' + o.id + '">Mark payment not done</button>'
+        : '<button type="button" class="btn go sm" data-act="gotpaid" data-id="' + o.id + '">✓ Payment done</button>') +
+        (now - o.at < UNDO_MS ? '<button type="button" class="btn red sm" data-act="undo" data-id="' + o.id + '">↩️ Undo</button>' : removeBtn("order:" + o.id, "Cancel order")) +
+        "</div>";
+    }
+    return h + "</li>";
+  }
   V.orders = function () {
-    var list = ordersOn(U.day), st = orderStats(list), now = Date.now();
-    var h = "<h1>📋 Orders: " + esc(nice(U.day)) + "</h1>" + dayPicker() + flashHtml() + netLine();
+    var all = ordersOn(U.day), st = orderStats(all), now = Date.now(), nums = orderNumbers(U.day), f = U.ofilter || "all";
+    var count = { all: all.length, unpaid: 0, paid: 0, gone: 0 };
+    all.forEach(function (o) { if (o.status !== "ok") count.gone++; else if (o.paid) count.paid++; else count.unpaid++; });
+    var list = all.filter(function (o) {
+      return f === "all" || (f === "gone" ? o.status !== "ok" : o.status === "ok" && (f === "paid" ? o.paid : !o.paid));
+    });
+    var h = '<div class="row" style="justify-content:space-between"><h1>📋 Orders: ' + esc(nice(U.day)) + "</h1>" +
+      '<button type="button" class="btn light sm" data-go="history">📅 Past days</button></div>' + dayPicker() + flashHtml() + netLine();
     var recent = U.lastOrder && D.orders[U.lastOrder];
     if (recent && recent.status === "ok" && now - recent.at < UNDO_MS) {
-      h += '<div class="flash ok">Order saved ✅ ' + esc(recent.name || "Customer") + " · " + rs(recent.total) +
+      h += '<div class="flash ok">Order #' + (nums[recent.id] || "") + " saved ✅ " + esc(recent.name || "Customer") + " · " + rs(recent.total) +
         '<div class="row" style="margin-top:8px"><button type="button" class="btn red" data-act="undo" data-id="' + recent.id + '">↩️ Undo this order</button></div></div>';
     }
-    h += '<button type="button" class="btn take go" data-go="order">🛎️ Take an order</button>';
-    h += '<div class="stats" style="margin-top:14px">' + stat("Orders", q(st.count)) + stat("Total", rs(st.total)) + stat("Paid", rs(st.paid)) + stat("To come", rs(st.unpaid)) + "</div>";
-    if (!list.length) return h + '<p class="muted">No orders yet for ' + esc(nice(U.day).toLowerCase()) + ".</p>";
-    h += '<ul class="list" style="margin-top:14px">' + list.map(function (o) {
-      var gone = o.status !== "ok", time = new Date(o.at).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" });
-      var b = '<li class="order' + (gone ? " gone" : "") + '"><div><div class="what">' + esc(o.name || "Customer") + " · " + rs(o.total) +
-        (gone ? '<span class="badge gone">Cancelled</span>' : o.paid ? '<span class="badge paid">Paid</span>' : '<span class="badge later">Pay later</span>') + "</div>" +
-        '<div class="items">' + esc(itemsText(o)) + "</div>" +
-        '<div class="muted small">' + esc(time) + (o.mobile ? ' · <a class="tel" href="tel:' + esc(o.mobile) + '">📞 ' + esc(o.mobile) + "</a>" : "") +
-        (o.by ? " · by " + esc(o.by) : "") + (o.note ? " · " + esc(o.note) : "") + "</div></div>";
-      if (!gone) {
-        b += '<div class="row">';
-        if (!o.paid) b += '<button type="button" class="btn go sm" data-act="gotpaid" data-id="' + o.id + '">✓ Got payment</button>';
-        b += now - o.at < UNDO_MS ? '<button type="button" class="btn red sm" data-act="undo" data-id="' + o.id + '">↩️ Undo</button>'
-          : removeBtn("order:" + o.id, "Cancel order");
-        b += "</div>";
-      }
-      return b + "</li>";
-    }).join("") + "</ul>";
+    if (U.day === today()) h += '<button type="button" class="btn take go" data-go="order">🛎️ Take an order</button>';
+    h += '<div class="stats" style="margin-top:14px">' + stat("Orders", q(st.count)) + stat("Total", rs(st.total)) +
+      stat("Payment done", rs(st.paid)) + stat("Payment not done", rs(st.unpaid), st.unpaid ? "neg" : "") + "</div>";
+    if (!all.length) return h + '<p class="muted">No orders for ' + esc(nice(U.day).toLowerCase()) + ".</p>";
+    h += '<div class="ofilter">' + [["all", "All"], ["unpaid", "⏳ Not paid"], ["paid", "✓ Paid"], ["gone", "✕ Cancelled"]].map(function (c) {
+      return '<button type="button" class="chip' + (f === c[0] ? " on" : "") + '" data-act="ofilter" data-f="' + c[0] + '">' + c[1] + " (" + count[c[0]] + ")</button>";
+    }).join("") + "</div>";
+    h += list.length ? '<ul class="olist">' + list.map(function (o) { return orderCard(o, nums[o.id], now); }).join("") + "</ul>"
+      : '<p class="muted">No orders here.</p>';
+    h += "<h2>Dishes sold " + esc(nice(U.day).toLowerCase()) + "</h2>" + itemsTable(itemsSold(all)) +
+      '<div class="footer"><button type="button" class="btn wa" data-act="shareorders">📤 Send this day’s orders</button></div>';
+    return h;
+  };
+  function ordersReport(d) {
+    var all = ordersOn(d), st = orderStats(all), nums = orderNumbers(d);
+    var lines = ["🧾 " + D.kitchen + " – orders " + asDate(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }), "",
+      "Orders: " + st.count + "   Total: " + rs(st.total), "Payment done: " + rs(st.paid) + "   Not done: " + rs(st.unpaid), "", "Dishes sold:"];
+    itemsSold(all).forEach(function (r) { lines.push("  • " + q(r.qty) + " × " + r.name + " = " + rs(r.amount)); });
+    var unpaid = all.filter(function (o) { return o.status === "ok" && !o.paid; }).sort(function (a, b) { return a.at - b.at; });
+    if (unpaid.length) {
+      lines.push("", "Payment not done:");
+      unpaid.forEach(function (o) { lines.push("  • #" + nums[o.id] + " " + (o.name || "Customer") + (o.mobile ? " " + o.mobile : "") + " – " + rs(o.total)); });
+    }
+    return lines.join("\n");
+  }
+
+  // ---------- past days: orders, dishes and money for each day
+  V.history = function () {
+    var ym = U.month || today().slice(0, 7), cur = today().slice(0, 7), days = {};
+    Object.keys(D.orders).forEach(function (k) {
+      var o = D.orders[k];
+      if (o.ghost || o.status === "deleted" || String(o.date).slice(0, 7) !== ym) return;
+      days[o.date] = 1;
+    });
+    var rows = Object.keys(days).sort().reverse().map(function (d) {
+      var list = ordersOn(d), st = orderStats(list), items = itemsSold(list).reduce(function (s, r) { return s + r.qty; }, 0);
+      return { d: d, st: st, items: items };
+    });
+    var t = { count: 0, total: 0, paid: 0, unpaid: 0, items: 0 };
+    rows.forEach(function (r) { t.count += r.st.count; t.total += r.st.total; t.paid += r.st.paid; t.unpaid += r.st.unpaid; t.items += r.items; });
+    var h = '<div class="month-nav"><button type="button" class="btn light sm" data-act="hmonth" data-n="-1" aria-label="Previous month">◀</button>' +
+      "<h1>📅 " + esc(monthName(ym)) + "</h1>" +
+      '<button type="button" class="btn light sm" data-act="hmonth" data-n="1" aria-label="Next month"' + (ym >= cur ? " disabled" : "") + ">▶</button></div>" + flashHtml();
+    h += '<div class="stats">' + stat("Orders", q(t.count)) + stat("Dishes", q(t.items)) + stat("Total", rs(t.total)) +
+      stat("Payment done", rs(t.paid)) + stat("Payment not done", rs(t.unpaid), t.unpaid ? "neg" : "") + stat("Days with orders", q(rows.length)) + "</div>";
+    if (!rows.length) return h + '<p class="muted">No orders in this month.</p>';
+    h += '<h2>Day by day</h2><p class="muted small">Tap a day to see its orders and dishes.</p><div class="table-wrap"><table>' +
+      "<thead><tr><th>Day</th><th>Orders</th><th>Dishes</th><th>Total</th><th>Paid</th><th>Not paid</th></tr></thead><tbody>" +
+      rows.map(function (r) {
+        return '<tr data-go="orders" data-day="' + r.d + '"><td>' + esc(nice(r.d)) + "</td><td>" + q(r.st.count) + "</td><td>" + q(r.items) + "</td><td>" +
+          rs(r.st.total) + "</td><td>" + rs(r.st.paid) + '</td><td class="' + (r.st.unpaid ? "neg" : "") + '">' + rs(r.st.unpaid) + "</td></tr>";
+      }).join("") + "</tbody></table></div>";
+    var monthOrders = [];
+    rows.forEach(function (r) { monthOrders = monthOrders.concat(ordersOn(r.d)); });
+    h += "<h2>Dishes sold in " + esc(monthName(ym)) + "</h2>" + itemsTable(itemsSold(monthOrders));
     return h;
   };
 
@@ -875,7 +1003,7 @@ tfoot td { font-weight: 800; border-bottom: 0; }
     var o = D.orders[ev.id];
     if (ev.t === "order") {
       if (!ev.o) return false;
-      if (!o) { D.orders[ev.id] = ev.o; return true; }
+      if (!o) { D.orders[ev.id] = ev.o; if (ev.from !== D.deviceId) incoming.push(ev.o); return true; }
       if (o.ghost) { var keep = o.status; D.orders[ev.id] = ev.o; D.orders[ev.id].status = keep; return true; }
       return false;
     }
@@ -885,11 +1013,23 @@ tfoot td { font-weight: 800; border-bottom: 0; }
       return true;
     }
     if (ev.t === "undo" && o.status !== "deleted") { o.status = "deleted"; return true; }
-    if (ev.t === "cancel" && o.status === "ok") { o.status = "cancelled"; return true; }
-    if (ev.t === "paid" && !o.paid) { o.paid = true; return true; }
+    if (ev.t === "cancel" && o.status === "ok") { o.status = "cancelled"; o.cancelledAt = ev.at; return true; }
+    if (ev.t === "paid" && !o.paid) { o.paid = true; o.paidAt = ev.at; return true; }
+    if (ev.t === "unpaid" && o.paid) { o.paid = false; o.paidAt = null; return true; }
     return false;
   }
-  var flushing = false, polling = false;
+  var flushing = false, polling = false, incoming = [];
+  // In a web browser (not the Android app) show a notification for orders from other phones while the page is open.
+  function browserNotify() {
+    var list = incoming.splice(0);
+    if (window.KitchenApp || !("Notification" in window) || Notification.permission !== "granted") return;
+    list.slice(-3).forEach(function (o) {
+      try { new Notification("🛎️ New order · " + (o.name || "Customer") + " · " + rs(o.total), { body: itemsText(o), icon: "icon-192.png", tag: o.id }); } catch (e) {}
+    });
+  }
+  function askBrowserNotify() {
+    if (!window.KitchenApp && "Notification" in window && Notification.permission === "default") { try { Notification.requestPermission(); } catch (e) {} }
+  }
   async function flush() {
     if (flushing || !D.code || !D.outbox.length) return;
     flushing = true;
@@ -932,6 +1072,7 @@ tfoot td { font-weight: 800; border-bottom: 0; }
     finally {
       polling = false; save();
       if (changed) say("ok", "Updates from other phones added ✅");
+      browserNotify();
       softRender(changed);
     }
   }
@@ -952,13 +1093,14 @@ tfoot td { font-weight: 800; border-bottom: 0; }
   }
   function setCode(code) {
     D.code = code; D.sync = { last: null }; D.outbox = []; keyCache = {};
+    if (code) askBrowserNotify();
     save(); bridgeSetup(); syncNow();
   }
 
   // ---------- render
   function render() {
     document.getElementById("homeBtn").hidden = U.view === "home";
-    document.getElementById("kname").textContent = "🍳 " + D.kitchen;
+    document.getElementById("kname").textContent = D.kitchen;
     app.innerHTML = V[U.view]();
     if (V[U.view + "After"]) V[U.view + "After"]();
   }
@@ -978,6 +1120,7 @@ tfoot td { font-weight: 800; border-bottom: 0; }
       if (mobile && mobile.replace(/\D/g, "").length < 10) throw new Error("The mobile number looks too short. Please check it.");
       var o = { id: newId(), date: today(), at: Date.now(), name: f.cname.value.trim(), mobile: mobile, items: items, total: total,
         paid: f.querySelector("input[name=paid]:checked").value === "yes", note: f.onote.value.trim(), status: "ok", by: D.phoneName || "" };
+      if (o.paid) o.paidAt = o.at;
       D.orders[o.id] = o; save();
       sendEvent({ t: "order", id: o.id, o: o });
       U.cart = []; U.q = ""; U.ocat = ""; U.lastOrder = o.id;
@@ -1110,10 +1253,20 @@ tfoot td { font-weight: 800; border-bottom: 0; }
     gotpaid: function (b) {
       var o = D.orders[b.dataset.id];
       if (!o) return;
-      o.paid = true; save();
-      sendEvent({ t: "paid", id: o.id });
-      say("ok", "Payment noted ✅ " + rs(o.total)); go("orders", { day: o.date });
+      o.paid = true; o.paidAt = Date.now(); save();
+      sendEvent({ t: "paid", id: o.id, at: o.paidAt });
+      say("ok", "Payment done ✅ " + (o.name || "Customer") + " · " + rs(o.total)); render();
     },
+    unpaid: function (b) {
+      var o = D.orders[b.dataset.id];
+      if (!o) return;
+      o.paid = false; o.paidAt = null; save();
+      sendEvent({ t: "unpaid", id: o.id });
+      say("ok", "Marked payment not done: " + (o.name || "Customer") + " · " + rs(o.total)); render();
+    },
+    ofilter: function (b) { U.ofilter = b.dataset.f; render(); },
+    hmonth: function (b) { U.month = addMonths(U.month || today().slice(0, 7), Number(b.dataset.n)); render(); },
+    shareorders: function () { shareText(ordersReport(U.day)); },
     newcode: function () { setCode(makeCode()); say("ok", "Kitchen code made ✅ Now type this code on the other phones."); go("settings"); },
     keepalerts: function () { if (window.KitchenApp && window.KitchenApp.keepAlertsOn) window.KitchenApp.keepAlertsOn(); },
     remove: function (b) {
@@ -1123,7 +1276,7 @@ tfoot td { font-weight: 800; border-bottom: 0; }
       var i = key.indexOf(":"), kind = key.slice(0, i), id = key.slice(i + 1);
       if (kind === "order") {
         var o = D.orders[id];
-        if (o) { o.status = "cancelled"; save(); sendEvent({ t: "cancel", id: id, date: o.date, name: o.name, total: o.total }); say("ok", "Order cancelled."); go("orders", { day: o.date }); }
+        if (o) { o.status = "cancelled"; o.cancelledAt = Date.now(); save(); sendEvent({ t: "cancel", id: id, date: o.date, name: o.name, total: o.total, at: o.cancelledAt }); say("ok", "Order cancelled."); go("orders", { day: o.date }); }
         return;
       }
       if (kind === "dish") {
@@ -1225,6 +1378,10 @@ tfoot td { font-weight: 800; border-bottom: 0; }
   render();
   bridgeSetup();
   syncNow();
+  // Web version: keep working offline after the first visit.
+  if ("serviceWorker" in navigator && !window.KitchenApp && location.protocol === "https:") {
+    navigator.serviceWorker.register("sw.js").catch(function () {});
+  }
 })();
 </script>
 </body>
