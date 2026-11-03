@@ -238,9 +238,14 @@ tfoot td { font-weight: 800; border-bottom: 0; }
       D.menu = base; D.menuVersion = v;
     } else if ((D.menuVersion || 0) < v) {
       // the menu was changed on this phone: keep those changes, only add the new dishes
-      var have = {}, removed = D.menuRemoved || [];
-      D.menu.forEach(function (d) { have[d.id] = 1; });
-      base.forEach(function (d) { if (!have[d.id] && removed.indexOf(d.id) < 0) D.menu.push(d); });
+      // only the dishes menu.js changed since, and never one changed on a phone
+      var at = {}, removed = D.menuRemoved || [], touched = D.menuTouched || {}, old = D.menuVersion || 0;
+      D.menu.forEach(function (d, i) { at[d.id] = i; });
+      base.forEach(function (d) {
+        if (removed.indexOf(d.id) >= 0) return;
+        if (at[d.id] == null) D.menu.push(d);
+        else if ((d.v || 1) > old && !touched[d.id]) D.menu[at[d.id]] = d;
+      });
       D.menuVersion = v;
     }
   })();
@@ -858,7 +863,7 @@ tfoot td { font-weight: 800; border-bottom: 0; }
     if (ev && ev.t === "dish" && ev.d && ev.d.id) {
       var at = (D.menu || []).findIndex(function (x) { return x.id === ev.d.id; });
       if (at >= 0) D.menu[at] = ev.d; else D.menu.push(ev.d);
-      D.menuEdited = true; return true;
+      D.menuEdited = true; D.menuTouched = D.menuTouched || {}; D.menuTouched[ev.d.id] = 1; return true;
     }
     if (ev && ev.t === "dishdel") {
       var before = (D.menu || []).length;
@@ -991,7 +996,7 @@ tfoot td { font-weight: 800; border-bottom: 0; }
       var d = U.editId ? D.menu.find(function (x) { return x.id === U.editId; }) : null;
       if (!d) { d = { id: "u" + newId() }; D.menu.push(d); }
       d.cat = cat; d.name = name; d.has = el.has.value.trim(); d.opts = opts;
-      D.menuEdited = true; save();
+      D.menuEdited = true; D.menuTouched = D.menuTouched || {}; D.menuTouched[d.id] = 1; save();
       sendEvent({ t: "dish", id: d.id, d: d });
       say("ok", "Saved ✅ " + name); go("menu");
     },

@@ -1,12 +1,13 @@
 // Swadishtam (Pure Veg) menu, copied from Swadishtam_Menu_High_Quality-3.pdf.
 // Each dish: category, name, optional "has" (what is inside), and portions [label, price].
 // A price of 0 means "MRP": the price is typed when the order is taken.
+// "v" on a dish = the menu version that last changed it; phones update that dish unless it was changed on the phone.
 // Raise KB_MENU_VERSION whenever this list changes, so phones that never edited their menu get the new one.
-window.KB_MENU_VERSION = 2;
+window.KB_MENU_VERSION = 3;
 window.KB_MENU = (function () {
   var Q = "Qtr", H = "Half", F = "Full";
   var menu = [];
-  function add(cat, name, opts, has) { menu.push({ cat: cat, name: name, opts: opts, has: has || "" }); }
+  function add(cat, name, opts, has, v) { menu.push({ cat: cat, name: name, opts: opts, has: has || "", v: v || 1 }); }
 
   // ---- Main Course (Qtr / Half / Full)
   [
@@ -91,11 +92,12 @@ window.KB_MENU = (function () {
   ["Coke", "Diet Coke", "Limca", "Soda", "Water Bottle (1 Ltr)"].forEach(function (n) { add("Beverages", n, [["MRP", 0]]); });
 
   // ---- Added later (keep new dishes at the end so the ids above never change)
-  add("Soups", "Soup", [[H, 50], [F, 80]]);
-  add("Snacks", "Veg Momos", [["Half (5 pcs)", 60], ["Full (8 pcs)", 100]]);
+  add("Soups", "Soup", [[H, 60], [F, 80]], "", 3);
+  add("Snacks", "Veg Momos", [["Half (5 pcs)", 60], ["Full (8 pcs)", 100]], "", 2);
+  add("Snacks", "Tandoori Momos", [["Half (5 pcs)", 80], ["Full (8 pcs)", 120]], "", 3);
 
   return menu.map(function (d, i) {
-    return { id: "m" + (i + 1), cat: d.cat, name: d.name, has: d.has,
+    return { id: "m" + (i + 1), cat: d.cat, name: d.name, has: d.has, v: d.v,
       opts: d.opts.map(function (o) { return { label: o[0], price: o[1] }; }) };
   });
 })();
