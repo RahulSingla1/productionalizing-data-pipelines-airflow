@@ -1,0 +1,1529 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f3d26">
+<title>Swadishtam · Kitchen Book</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Swadishtam">
+<style>
+/* Swadishtam Kitchen Book. Works offline; everything is stored on this device.
+   Look: the restaurant's own deep green and gold, cream paper, Mukta type. */
+@font-face { font-family: "Mukta"; font-weight: 400; font-display: swap; src: url(fonts/mukta-latin-400-normal.woff2) format("woff2"); }
+@font-face { font-family: "Mukta"; font-weight: 600; font-display: swap; src: url(fonts/mukta-latin-600-normal.woff2) format("woff2"); }
+@font-face { font-family: "Mukta"; font-weight: 700; font-display: swap; src: url(fonts/mukta-latin-700-normal.woff2) format("woff2"); }
+@font-face { font-family: "Mukta"; font-weight: 800; font-display: swap; src: url(fonts/mukta-latin-800-normal.woff2) format("woff2"); }
+:root {
+  --bg: #f7f4ec; --card: #ffffff; --fg: #17221b; --muted: #5f6b62; --line: #e2dccb;
+  --brand: #0f3d26; --brand-ink: #ffffff; --brand-soft: #e6efe8; --gold: #b38728; --gold-soft: #f6eedb;
+  --ok: #17803d; --ok-bg: #e3f3e8; --warn: #a15c00; --warn-bg: #fdf0d9; --bad: #b42318; --bad-bg: #fdecea; --focus: #b38728;
+  --font: "Mukta", system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Noto Sans Devanagari", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1612; --card: #18221c; --fg: #eef3ef; --muted: #a7b4ab; --line: #2c3a31;
+    --brand: #1f6b44; --brand-ink: #ffffff; --brand-soft: #1b2e23; --gold: #e0b75a; --gold-soft: #33291a;
+    --ok: #5cc685; --ok-bg: #15301f; --warn: #f0b35a; --warn-bg: #33261a; --bad: #ff8a80; --bad-bg: #3a1d1b; --focus: #e0b75a;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html { font-size: 19px; -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font); line-height: 1.45; }
+[hidden] { display: none !important; }
+.top { position: sticky; top: 0; z-index: 5; background: var(--brand); color: var(--brand-ink);
+  display: flex; align-items: center; gap: 10px;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px)); }
+.top { border-bottom: 3px solid var(--gold); }
+.brandmark { flex: 1; min-width: 0; line-height: 1.1; }
+.top .name { font-weight: 800; font-size: 1.2rem; letter-spacing: .01em; color: #f3d98b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.top .sub { font-size: .72rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; opacity: .85; }
+.top button { font: inherit; font-weight: 700; color: var(--brand-ink); background: transparent;
+  border: 2px solid currentColor; border-radius: 12px; padding: 4px 14px; min-height: 44px; cursor: pointer; }
+main { max-width: 760px; margin: 0 auto;
+  padding: 16px max(16px, env(safe-area-inset-right, 0px)) calc(96px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+h1 { font-size: 1.6rem; line-height: 1.2; margin: 6px 0 2px; }
+h2 { font-size: 1.2rem; margin: 26px 0 10px; }
+.lead { color: var(--muted); margin: 0 0 8px; }
+.muted { color: var(--muted); }
+.small { font-size: .85rem; }
+.stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.stack > * { min-width: 0; }
+
+.flash { border-radius: 14px; padding: 12px 16px; margin: 12px 0; font-weight: 700; font-size: 1.05rem; }
+.flash.ok { background: var(--ok-bg); color: var(--ok); }
+.flash.bad { background: var(--bad-bg); color: var(--bad); }
+
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+@media (min-width: 640px) { .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.tile { font: inherit; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  text-align: center; min-height: 120px; padding: 12px; border-radius: 16px; background: var(--card); color: var(--fg);
+  border: 1px solid var(--line); box-shadow: 0 1px 2px rgba(15, 61, 38, .06); font-weight: 700; font-size: 1.08rem; cursor: pointer; }
+.tile .icon { font-size: 2.4rem; line-height: 1.15; }
+.tile .state { font-size: .85rem; font-weight: 600; color: var(--muted); }
+.tile.todo { border-color: var(--bad); background: var(--bad-bg); }
+.tile.todo .state { color: var(--bad); }
+.tile.done { border-color: var(--ok); background: var(--ok-bg); }
+.tile.done .state { color: var(--ok); }
+.tile:active { transform: translateY(2px); }
+
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 16px 18px; margin: 14px 0; }
+.card h2:first-child { margin-top: 0; }
+label, .label { display: block; font-weight: 700; margin: 16px 0 6px; font-size: 1.05rem; }
+.hint { display: block; font-weight: 400; color: var(--muted); font-size: .85rem; }
+input[type=text], input[type=date], input[type=search], input[type=tel], select, textarea {
+  width: 100%; font: inherit; font-size: 1.25rem; padding: 12px 14px; border: 2px solid var(--line); border-radius: 12px;
+  background: var(--bg); color: var(--fg); }
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.cur { position: relative; }
+.cur span { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 1.25rem; color: var(--muted); }
+.cur input { padding-left: 38px; }
+
+.btn { font: inherit; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 54px;
+  padding: 8px 20px; border-radius: 14px; border: 2px solid transparent; cursor: pointer; font-size: 1.12rem; font-weight: 700;
+  background: var(--brand); color: var(--brand-ink); text-decoration: none; }
+.btn.big { width: 100%; min-height: 62px; font-size: 1.3rem; margin-top: 18px; }
+.btn.go { background: var(--ok); color: var(--card); }
+.btn.light { background: var(--card); color: var(--fg); border-color: var(--line); }
+.btn.red { background: var(--card); color: var(--bad); border-color: var(--bad); }
+.btn.red.armed { background: var(--bad); color: var(--card); }
+.btn.sm { min-height: 44px; font-size: 1rem; padding: 4px 14px; }
+.btn.wa { background: #1f9d55; color: #fff; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.row > .grow { flex: 1 1 140px; min-width: 0; }
+
+.days { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0 4px; }
+.days button { font: inherit; font-weight: 700; padding: 10px; border-radius: 12px; border: 2px solid var(--line);
+  background: var(--card); color: var(--fg); cursor: pointer; min-height: 50px; }
+.days button.on { background: var(--brand); border-color: var(--brand); color: var(--brand-ink); }
+.otherday { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.otherday label { margin: 0; font-weight: 600; font-size: .95rem; white-space: nowrap; }
+.otherday input { font-size: 1.05rem; padding: 8px 10px; }
+
+.choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (min-width: 640px) { .choices { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.choices input { position: absolute; opacity: 0; pointer-events: none; }
+.choices label { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center;
+  padding: 12px 6px; border: 2px solid var(--line); border-radius: 14px; background: var(--bg); cursor: pointer; font-size: .95rem; }
+.choices label .icon { font-size: 1.8rem; }
+.choices input:checked + label { border-color: var(--brand); background: var(--brand-soft); box-shadow: inset 0 0 0 2px var(--brand); }
+
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  padding: 12px 14px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; }
+.list li > div { min-width: 0; }
+.list .what { font-weight: 700; }
+.list li.low { border-color: var(--bad); background: var(--bad-bg); }
+.list li.editing { border-color: var(--brand); box-shadow: inset 0 0 0 2px var(--brand); }
+
+.stock-row { display: grid; grid-template-columns: minmax(0, 1fr) 130px; gap: 12px; align-items: center;
+  padding: 12px 14px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; }
+.stock-row.low { border-color: var(--bad); background: var(--bad-bg); }
+.stock-row label { margin: 0; font-size: 1.1rem; }
+.stock-row input { text-align: center; padding: 10px; }
+.linkish { font: inherit; font-size: .85rem; color: var(--muted); background: none; border: 0; padding: 4px 0; text-decoration: underline; cursor: pointer; }
+
+.stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (min-width: 640px) { .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.stat { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; }
+.card .stat { background: var(--bg); }
+.stat .k { color: var(--muted); font-size: .85rem; font-weight: 600; }
+.stat .v { font-size: 1.3rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.pos { color: var(--ok); } .neg { color: var(--bad); }
+.month-nav { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; margin: 6px 0 12px; }
+.month-nav h1 { text-align: center; margin: 0; font-size: 1.4rem; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
+table { border-collapse: collapse; width: 100%; font-size: .95rem; font-variant-numeric: tabular-nums; }
+th, td { padding: 9px 12px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { font-size: .82rem; color: var(--muted); }
+tbody tr { cursor: pointer; }
+tr.miss td { color: var(--bad); }
+tfoot td { font-weight: 800; border-bottom: 0; }
+.footer { margin-top: 26px; display: flex; gap: 10px; flex-wrap: wrap; }
+.confirm { border: 2px solid var(--bad); }
+.take { width: 100%; min-height: 76px; font-size: 1.45rem; margin-top: 14px; }
+.oline { border: 1px solid var(--line); border-radius: 14px; padding: 4px 12px 12px; background: var(--bg); }
+.oline label { margin-top: 10px; font-size: .95rem; }
+.oline-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 10px; align-items: end; }
+.oline .lineamt { margin-top: 6px; font-weight: 700; }
+.ordertotal { margin-top: 16px; font-size: 1.35rem; font-weight: 800; display: flex; justify-content: space-between; align-items: baseline;
+  padding: 12px 14px; border-radius: 14px; background: var(--brand-soft); font-variant-numeric: tabular-nums; }
+.choices.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.badge { display: inline-block; font-size: .8rem; font-weight: 700; border-radius: 999px; padding: 1px 10px; margin-left: 6px; vertical-align: 2px; }
+.badge.paid { background: var(--ok-bg); color: var(--ok); }
+.badge.later { background: var(--brand-soft); color: var(--brand); }
+.badge.gone { background: var(--bad-bg); color: var(--bad); }
+.order.gone .what, .order.gone .items { text-decoration: line-through; opacity: .7; }
+.olist { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 10px; }
+.ocard { background: var(--card); border: 1px solid var(--line); border-left: 5px solid var(--warn); border-radius: 14px; padding: 12px 14px; }
+.ocard.paid { border-left-color: var(--ok); }
+.pill.pending { background: var(--warn-bg); color: var(--warn); }
+.pill.done { background: var(--ok-bg); color: var(--ok); }
+.oacts .btn { flex: 1 1 auto; }
+.oacts.second { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); }
+.oacts.second .btn { min-height: 42px; font-size: .95rem; padding: 4px 12px; }
+.alertbox { display: grid; gap: 8px; margin: 12px 0; }
+.alertbox button { font: inherit; text-align: left; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 12px 14px; border-radius: 14px; border: 1px solid var(--warn); background: var(--warn-bg); color: var(--warn); font-weight: 700; cursor: pointer; }
+.alertbox button.ok { border-color: var(--ok); background: var(--ok-bg); color: var(--ok); }
+.editing-note { background: var(--gold-soft); border: 1px solid var(--gold); border-radius: 14px; padding: 10px 14px; font-weight: 700; }
+.ocard.gone { border-left-color: var(--bad); opacity: .8; }
+.ohead { display: flex; align-items: baseline; gap: 10px; }
+.onum { font-weight: 800; color: var(--gold); font-variant-numeric: tabular-nums; }
+.oname { font-weight: 700; font-size: 1.1rem; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.oamt { font-weight: 800; font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.ocard.gone .oname, .ocard.gone .oamt, .ocard.gone .items { text-decoration: line-through; }
+.ocard .items { margin: 4px 0 8px; }
+.pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.pill { display: inline-flex; align-items: center; gap: 4px; font-size: .82rem; font-weight: 700; border-radius: 999px; padding: 2px 10px; }
+.pill.taken { background: var(--brand-soft); color: var(--brand); }
+.pill.paid { background: var(--ok-bg); color: var(--ok); }
+.pill.unpaid { background: var(--warn-bg); color: var(--warn); }
+.pill.gone { background: var(--bad-bg); color: var(--bad); }
+.ometa { margin-top: 6px; }
+.oacts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.ofilter { display: flex; gap: 8px; overflow-x: auto; padding: 12px 2px 2px; scrollbar-width: none; }
+.order .items { margin-top: 2px; }
+a.tel { color: inherit; font-weight: 600; }
+.code { font-family: ui-monospace, "Roboto Mono", monospace; font-size: 1.5rem; font-weight: 800; letter-spacing: .05em;
+  padding: 10px 14px; border-radius: 12px; background: var(--bg); border: 2px dashed var(--line); user-select: all; text-align: center; }
+.chips { display: flex; gap: 8px; overflow-x: auto; padding: 10px 2px 4px; scrollbar-width: none; }
+.chip { flex: 0 0 auto; font: inherit; font-weight: 700; font-size: .95rem; padding: 6px 14px; min-height: 44px; border-radius: 999px;
+  border: 2px solid var(--line); background: var(--card); color: var(--fg); cursor: pointer; }
+.chip.on { background: var(--brand); border-color: var(--brand); color: var(--brand-ink); }
+#results { display: grid; gap: 8px; margin-top: 8px; }
+.catline { font-size: .8rem; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-top: 6px; }
+.dish { padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--bg); }
+.dname { font-weight: 700; font-size: 1.05rem; }
+.opts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+.opt { position: relative; font: inherit; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 88px; min-height: 58px;
+  padding: 4px 12px; border-radius: 12px; border: 2px solid var(--brand); background: var(--card); color: var(--fg); cursor: pointer; }
+.opt .ol { font-size: .8rem; font-weight: 700; color: var(--muted); line-height: 1.1; }
+.opt .op { font-weight: 800; font-size: 1.12rem; font-variant-numeric: tabular-nums; }
+.opt.on { background: var(--brand-soft); }
+.opt:active { transform: scale(.97); }
+.opt .cnt { position: absolute; top: -10px; right: -10px; min-width: 26px; height: 26px; padding: 0 6px; border-radius: 999px;
+  background: var(--ok); color: var(--card); font-size: .85rem; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+.cart { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.cart li { padding: 10px 12px; border-radius: 12px; background: var(--bg); border: 1px solid var(--line); }
+.cname { font-weight: 700; }
+.cline { display: flex; align-items: center; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
+.camt { margin-left: auto; font-size: 1.12rem; font-variant-numeric: tabular-nums; }
+.stepper { display: inline-flex; align-items: center; border: 2px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--card); }
+.stepper button { font: inherit; font-size: 1.45rem; font-weight: 800; width: 50px; height: 46px; border: 0; background: var(--card); color: var(--fg); cursor: pointer; }
+.stepper .cq { min-width: 36px; text-align: center; font-weight: 800; font-size: 1.15rem; }
+.cur.mrp { width: 120px; }
+.cur.mrp span { left: 10px; font-size: 1.05rem; }
+.cur.mrp input { font-size: 1.05rem; padding: 8px 8px 8px 28px; }
+.custom { margin-top: 12px; }
+.custom summary { cursor: pointer; font-weight: 700; color: var(--muted); padding: 8px 0; }
+.savebar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px max(16px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  background: var(--card); border-top: 2px solid var(--line); box-shadow: 0 -4px 14px rgba(0, 0, 0, .10); }
+.savebar #stotal { font-size: 1.25rem; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.savebar .btn { flex-shrink: 0; }
+.savebar small { font-size: .85rem; font-weight: 600; }
+.row.pair > .grow { flex-basis: 200px; }
+.savebar .btn { min-height: 58px; }
+.netline { font-size: .9rem; font-weight: 700; padding: 8px 12px; border-radius: 12px; margin: 10px 0; }
+.netline.ok { background: var(--ok-bg); color: var(--ok); }
+.netline.off { background: var(--bad-bg); color: var(--bad); }
+@media (prefers-reduced-motion: reduce) { .tile:active { transform: none; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brandmark"><div class="name" id="kname">Swadishtam</div><div class="sub">Pure Veg · Kitchen Book</div></div>
+  <button type="button" id="homeBtn" data-go="home" hidden>🏠 Home</button>
+</header>
+<main id="app"></main>
+
+<script src="menu.js"></script>
+<script>
+(function () {
+  "use strict";
+  var KEY = "kitchen-book-v1", PREV = "kitchen-book-v1-prev";
+  var CATS = [
+    ["Vegetables & Groceries", "🥕"], ["Meat & Dairy", "🥛"], ["Gas & Electricity", "🔥"],
+    ["Packaging", "📦"], ["Staff Salary", "👨‍🍳"], ["Rent", "🏠"],
+    ["Delivery & Commission", "🛵"], ["Repairs", "🔧"], ["Other", "📝"]
+  ];
+  var UNITS = ["kg", "g", "litre", "ml", "pieces", "packets", "dozen", "boxes"];
+  var app = document.getElementById("app");
+
+  // ---------- data (all on this phone)
+  function blank() {
+    return { v: 1, kitchen: "Swadishtam", sales: {}, spent: [], items: [], buy: [], lastBackup: null,
+      orders: {}, prices: {}, outbox: [], sync: { last: null }, code: "", phoneName: "", kitchenPhone: "9056564111", server: "https://ntfy.sh", deviceId: null };
+  }
+  function fix(d) {
+    var b = blank(); for (var k in b) if (d[k] == null) d[k] = b[k];
+    if (d.kitchen === "My Cloud Kitchen") d.kitchen = "Swadishtam";
+    if (!d.deviceId) d.deviceId = Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+    return d;
+  }
+  function load() {
+    try { var d = JSON.parse(localStorage.getItem(KEY) || "null"); if (d && d.v === 1) return fix(d); } catch (e) {}
+    try { var p = JSON.parse(localStorage.getItem(PREV) || "null"); if (p && p.v === 1) return fix(p); } catch (e) {}
+    return blank();
+  }
+  var D = fix(load());
+  // The menu starts from menu.js. A newer menu.js replaces it, unless the menu was changed on a phone.
+  (function () {
+    var v = window.KB_MENU_VERSION || 0, base = JSON.parse(JSON.stringify(window.KB_MENU || []));
+    if (!Array.isArray(D.menu) || (!D.menuEdited && (D.menuVersion || 0) < v)) {
+      D.menu = base; D.menuVersion = v;
+    } else if ((D.menuVersion || 0) < v) {
+      // the menu was changed on this phone: keep those changes, only add the new dishes
+      // only the dishes menu.js changed since, and never one changed on a phone
+      var at = {}, removed = D.menuRemoved || [], touched = D.menuTouched || {}, old = D.menuVersion || 0;
+      D.menu.forEach(function (d, i) { at[d.id] = i; });
+      base.forEach(function (d) {
+        if (removed.indexOf(d.id) >= 0) return;
+        if (at[d.id] == null) D.menu.push(d);
+        else if ((d.v || 1) > old && !touched[d.id]) D.menu[at[d.id]] = d;
+      });
+      D.menuVersion = v;
+    }
+  })();
+  var storageOk = true;
+  function save() {
+    try {
+      var text = JSON.stringify(D);
+      var old = localStorage.getItem(KEY);
+      if (old) localStorage.setItem(PREV, old);   // keep the previous copy as a safety net
+      localStorage.setItem(KEY, text);
+      storageOk = true;
+    } catch (e) {
+      storageOk = false;
+      say("bad", "Could not save on this phone. The phone storage may be full.");
+    }
+  }
+
+  // ---------- helpers
+  var U = { view: "home", day: null, editId: null, flash: null, armed: null, month: null, restore: null };
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function iso(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+  function today() { return iso(new Date()); }
+  function addDays(s, n) { var p = s.split("-").map(Number); return iso(new Date(p[0], p[1] - 1, p[2] + n)); }
+  function asDate(s) { var p = s.split("-").map(Number); return new Date(p[0], p[1] - 1, p[2] || 1); }
+  function nice(s) {
+    if (s === today()) return "Today";
+    if (s === addDays(today(), -1)) return "Yesterday";
+    return asDate(s).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
+  }
+  function monthName(ym) { return asDate(ym + "-01").toLocaleDateString("en-IN", { month: "long", year: "numeric" }); }
+  function addMonths(ym, n) { var p = ym.split("-").map(Number); var d = new Date(p[0], p[1] - 1 + n, 1); return iso(d).slice(0, 7); }
+  function rs(n) { return "₹" + Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 }); }
+  function q(n) { return Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 }); }
+  function num(v, label, whole) {
+    v = String(v == null ? "" : v).replace(/,/g, "").trim();
+    if (v === "") return 0;
+    var n = Number(v);
+    if (!isFinite(n) || n < 0) throw new Error("Please type only numbers in “" + label + "”.");
+    return whole ? Math.round(n) : Math.round(n * 100) / 100;
+  }
+  function newId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function say(kind, text) { U.flash = [kind, text, Date.now()]; }
+  function flashHtml() { if (!U.flash || Date.now() - U.flash[2] > 8000) return ""; var f = U.flash;
+    return '<div class="flash ' + f[0] + '" role="status">' + esc(f[1]) + "</div>"; }
+  function go(view, extra) {
+    extra = extra || {};
+    U.view = view; U.armed = null; U.restore = null; U.dirty = false;
+    U.editId = extra.id || null;
+    U.day = extra.day || (view === "sales" || view === "spent" || view === "orders" ? today() : null);
+    if (view === "report" || view === "history") U.month = extra.month || U.month || today().slice(0, 7);
+    if (view === "orders" && !extra.keepFilter) U.ofilter = extra.filter || "all";
+    if (view === "order" && !extra.edit && U.editOrder) { U.editOrder = null; U.cart = []; }
+    render(); window.scrollTo(0, 0);
+  }
+  window.appBack = function () { if (U.view !== "home") { go("home"); return true; } return false; };
+
+  // ---------- totals (worked out automatically)
+  function spentOn(d) { return D.spent.filter(function (x) { return x.date === d; }); }
+  function sum(list, f) { return list.reduce(function (s, x) { return s + Number(x[f] || 0); }, 0); }
+  function ordersOn(d) {
+    return Object.keys(D.orders).map(function (k) { return D.orders[k]; })
+      .filter(function (o) { return o.date === d && o.status !== "deleted" && !o.ghost; })
+      .sort(function (a, b) { return b.at - a.at; });
+  }
+  function orderStats(list) {
+    var t = { count: 0, total: 0, paid: 0, unpaid: 0 };
+    list.forEach(function (o) {
+      if (o.status !== "ok") return;
+      t.count++; t.total += Number(o.total || 0);
+      if (o.paid) t.paid += Number(o.total || 0); else t.unpaid += Number(o.total || 0);
+    });
+    return t;
+  }
+  // Day totals = orders taken in the app + the "other sales" typed on the Sales screen.
+  function dayTotals(d) {
+    var s = D.sales[d] || {}, sp = spentOn(d), os = orderStats(ordersOn(d));
+    return { filled: !!D.sales[d] || os.count > 0, typed: !!D.sales[d], os: os,
+      orders: Number(s.orders || 0) + os.count, sales: Number(s.sales || 0) + os.total,
+      received: Number(s.received || 0) + os.paid, toCome: Number(s.toCome || 0) + os.unpaid,
+      spent: sum(sp, "amount"), spentCount: sp.length, spentList: sp };
+  }
+  function monthTotals(ym) {
+    var t = { orders: 0, sales: 0, received: 0, toCome: 0, spent: 0, days: 0, cats: {} }, days = {};
+    Object.keys(D.sales).forEach(function (d) {
+      if (d.slice(0, 7) !== ym) return;
+      var s = D.sales[d];
+      t.orders += Number(s.orders || 0); t.sales += Number(s.sales || 0);
+      t.received += Number(s.received || 0); t.toCome += Number(s.toCome || 0); days[d] = 1;
+    });
+    Object.keys(D.orders).forEach(function (k) {
+      var o = D.orders[k];
+      if (o.status !== "ok" || o.ghost || String(o.date).slice(0, 7) !== ym) return;
+      t.orders++; t.sales += Number(o.total || 0);
+      if (o.paid) t.received += Number(o.total || 0); else t.toCome += Number(o.total || 0);
+      days[o.date] = 1;
+    });
+    t.days = Object.keys(days).length;
+    D.spent.forEach(function (x) {
+      if (x.date.slice(0, 7) !== ym) return;
+      t.spent += Number(x.amount || 0); t.cats[x.cat] = (t.cats[x.cat] || 0) + Number(x.amount || 0);
+    });
+    t.profit = t.sales - t.spent;
+    return t;
+  }
+  function lowItems() { return D.items.filter(function (i) { return Number(i.qty) <= Number(i.low); }); }
+  function openBuy() { return D.buy.filter(function (b) { return b.status === "open"; }); }
+  function needToBuyNames() {
+    var names = openBuy().map(function (b) { return b.name; });
+    lowItems().forEach(function (i) { if (names.map(function (n) { return n.toLowerCase(); }).indexOf(i.name.toLowerCase()) < 0) names.push(i.name); });
+    return names;
+  }
+
+  // ---------- sharing and backup (Android app bridge, or the browser as a fallback)
+  function shareText(t) {
+    if (window.KitchenApp && window.KitchenApp.shareText) { window.KitchenApp.shareText(t); return; }
+    if (navigator.share) { navigator.share({ text: t }).catch(function () {}); return; }
+    window.open("https://wa.me/?text=" + encodeURIComponent(t), "_blank");
+  }
+  function shareFile(name, content) {
+    if (window.KitchenApp && window.KitchenApp.shareFile) { window.KitchenApp.shareFile(name, content); return; }
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([content], { type: "application/json" }));
+    a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  }
+  function dayReport(d) {
+    var t = dayTotals(d), m = monthTotals(d.slice(0, 7));
+    var lines = ["🍳 " + D.kitchen + " – " + asDate(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }), ""];
+    if (t.filled) {
+      lines.push("Orders: " + q(t.orders) + (t.os.count ? " (" + t.os.count + " taken in the app)" : ""),
+        "Sales: " + rs(t.sales), "Money received: " + rs(t.received), "Still to come: " + rs(t.toCome));
+    } else {
+      lines.push("Sales: not filled yet");
+    }
+    lines.push("Money spent: " + rs(t.spent));
+    t.spentList.forEach(function (x) { lines.push("  • " + x.cat + ": " + rs(x.amount) + (x.note ? " (" + x.note + ")" : "")); });
+    lines.push("Sales − spent: " + rs(t.sales - t.spent), "");
+    lines.push("This month so far: sales " + rs(m.sales) + ", spent " + rs(m.spent) + ", sales − spent " + rs(m.profit));
+    var buy = needToBuyNames();
+    if (buy.length) lines.push("", "🛒 Need to buy: " + buy.join(", "));
+    return lines.join("\n");
+  }
+  function monthReport(ym) {
+    var m = monthTotals(ym);
+    var lines = ["🍳 " + D.kitchen + " – " + monthName(ym), "",
+      "Orders: " + q(m.orders), "Sales: " + rs(m.sales), "Money received: " + rs(m.received),
+      "Still to come: " + rs(m.toCome), "Money spent: " + rs(m.spent), "Sales − spent: " + rs(m.profit)];
+    var cats = Object.keys(m.cats).sort(function (a, b) { return m.cats[b] - m.cats[a]; });
+    if (cats.length) { lines.push("", "Where the money went:"); cats.forEach(function (c) { lines.push("  • " + c + ": " + rs(m.cats[c])); }); }
+    lines.push("", "Days with sales filled: " + m.days);
+    return lines.join("\n");
+  }
+
+  // ---------- pieces
+  function moneyField(id, label, hint, val) {
+    return '<label for="' + id + '">' + esc(label) + (hint ? '<span class="hint">' + esc(hint) + "</span>" : "") + "</label>" +
+      '<div class="cur"><span>₹</span><input type="text" inputmode="decimal" autocomplete="off" placeholder="0" id="' + id +
+      '" name="' + id + '" value="' + (val ? esc(val) : "") + '"></div>';
+  }
+  function dayPicker() {
+    var t = today(), y = addDays(t, -1);
+    return '<div class="days"><button type="button" data-day="' + y + '" class="' + (U.day === y ? "on" : "") + '">Yesterday</button>' +
+      '<button type="button" data-day="' + t + '" class="' + (U.day === t ? "on" : "") + '">Today</button></div>' +
+      '<div class="otherday"><label for="pickday">Other day:</label><input type="date" id="pickday" max="' + t + '" value="' + U.day + '"></div>';
+  }
+  function tile(view, icon, label, done, state) {
+    var cls = done === true ? "done" : done === false ? "todo" : "";
+    return '<button type="button" class="tile ' + cls + '" data-go="' + view + '"><span class="icon" aria-hidden="true">' + icon +
+      "</span>" + esc(label) + '<span class="state">' + esc(state) + "</span></button>";
+  }
+  function removeBtn(key, label) {
+    var armed = U.armed === key;
+    return '<button type="button" class="btn red sm' + (armed ? " armed" : "") + '" data-act="remove" data-key="' + esc(key) + '">' +
+      (armed ? "Tap again to remove" : (label || "Remove")) + "</button>";
+  }
+  function stat(k, v, cls) { return '<div class="stat"><div class="k">' + esc(k) + '</div><div class="v ' + (cls || "") + '">' + esc(v) + "</div></div>"; }
+
+  // ---------- screens
+  var V = {};
+
+  V.home = function () {
+    var t = today(), td = dayTotals(t), m = monthTotals(t.slice(0, 7));
+    var stockDone = D.items.length > 0 && D.items.some(function (i) { return i.countedOn === t; });
+    var pending = [!td.filled, td.spentCount === 0, !stockDone].filter(Boolean).length;
+    var buyCount = needToBuyNames().length;
+    var h = "<h1>Namaste 🙏</h1>" +
+      '<p class="lead">' + esc(new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })) + "</p>" + flashHtml();
+    h += pending ? '<div class="flash bad">Please fill ' + pending + " thing" + (pending > 1 ? "s" : "") + " for today 👇</div>"
+      : '<div class="flash ok">Everything is filled for today. Thank you! 👍</div>';
+    h += '<button type="button" class="btn take go" data-go="order">🛎️ Take an order</button>' + pendingBox();
+    h += '<div class="tiles">' +
+      tile("orders", "📋", "Today's Orders", null, td.os.count + " order" + (td.os.count === 1 ? "" : "s") + " · " + rs(td.os.total)) +
+      tile("sales", "💰", "Today's Sales", td.filled, td.filled ? "✅ " + rs(td.sales) : "❌ Not filled") +
+      tile("spent", "🧾", "Money Spent", td.spentCount > 0, td.spentCount ? "✅ " + rs(td.spent) : "❌ Nothing added") +
+      tile("stock", "📦", "Stock Left", stockDone, stockDone ? "✅ Updated" : "❌ Not updated") +
+      tile("buy", "🛒", "Need to Buy", null, buyCount + " item" + (buyCount === 1 ? "" : "s")) +
+      tile("report", "📊", "Reports", null, "Totals") +
+      tile("menu", "📖", "Menu", null, (D.menu || []).length + " dishes") +
+      tile("settings", "💾", "Backup", null, D.lastBackup ? "Last: " + nice(D.lastBackup) : "Not done yet") +
+      "</div>";
+    h += '<div class="card"><h2>Today’s totals</h2><div class="stats">' +
+      stat("Sales", rs(td.sales)) + stat("Received", rs(td.received)) + stat("Spent", rs(td.spent)) +
+      stat("Sales − spent", rs(td.sales - td.spent), td.sales - td.spent >= 0 ? "pos" : "neg") + "</div>" +
+      '<p class="muted" style="margin-bottom:0">This month: sales <strong>' + rs(m.sales) + "</strong>, spent <strong>" + rs(m.spent) +
+      "</strong>, sales − spent <strong class=\"" + (m.profit >= 0 ? "pos" : "neg") + '">' + rs(m.profit) + "</strong></p>" +
+      '<button type="button" class="btn big wa" data-act="sharetoday">📤 Send today’s report</button></div>';
+    if (!D.lastBackup || D.lastBackup < addDays(t, -7)) {
+      h += '<div class="flash bad">💾 Please make a backup. If this phone is lost or reset, everything is lost. <button type="button" class="btn sm" data-go="settings">Back up now</button></div>';
+    }
+    return h;
+  };
+
+  V.sales = function () {
+    var e = D.sales[U.day] || {}, os = orderStats(ordersOn(U.day));
+    var h = "<h1>💰 Sales: " + esc(nice(U.day)) + "</h1>" + dayPicker() + flashHtml();
+    if (os.count) {
+      h += '<div class="card"><h2>🛎️ From orders in the app</h2><div class="stats">' + stat("Orders", q(os.count)) + stat("Amount", rs(os.total)) +
+        stat("Paid", rs(os.paid)) + stat("To come", rs(os.unpaid)) + '</div><p class="muted small" style="margin-bottom:0">These are added to the totals automatically. ' +
+        'Below, only type sales that were <strong>not</strong> taken as orders here (for example Swiggy or Zomato).</p></div>';
+    }
+    h += '<form class="card" data-form="sales">' + (os.count ? "<h2>Other sales</h2>" : "") +
+      (D.sales[U.day] ? '<p class="muted" style="margin:0">Already filled. Change any number and press Save.</p>' : "") +
+      '<label for="orders">How many orders?</label>' +
+      '<input type="text" inputmode="numeric" autocomplete="off" placeholder="0" id="orders" name="orders" value="' + (e.orders != null ? esc(e.orders) : "") + '">' +
+      moneyField("sales", "Total sales", "Full value of all orders", e.sales) +
+      moneyField("received", "Money received", "Cash + UPI + card actually in hand or bank", e.received) +
+      moneyField("toCome", "Money still to come", "From Swiggy / Zomato / customers who pay later", e.toCome) +
+      '<label for="notes">Anything to remember? <span class="hint">Optional</span></label>' +
+      '<textarea id="notes" name="notes" rows="2">' + esc(e.notes || "") + "</textarea>" +
+      '<button class="btn big go" type="submit">✓ Save</button></form>';
+    if (D.sales[U.day]) h += '<div class="footer">' + removeBtn("sales:" + U.day, "🗑 Remove this day’s sales") + "</div>";
+    return h;
+  };
+
+  V.spent = function () {
+    var editing = U.editId ? D.spent.find(function (x) { return x.id === U.editId; }) : null;
+    var cats = CATS.map(function (c, i) {
+      return '<input type="radio" name="cat" id="cat' + i + '" value="' + esc(c[0]) + '"' + (editing && editing.cat === c[0] ? " checked" : "") +
+        '><label for="cat' + i + '"><span class="icon" aria-hidden="true">' + c[1] + "</span>" + esc(c[0]) + "</label>"; }).join("");
+    var list = spentOn(U.day).sort(function (a, b) { return (b.at || 0) - (a.at || 0); });
+    var h = "<h1>🧾 Money Spent: " + esc(nice(U.day)) + "</h1>" + dayPicker() + flashHtml() +
+      '<form class="card" data-form="spent">' + (editing ? '<p class="flash ok" style="margin:0">Changing an entry. Fix it and press Save.</p>' : "") +
+      moneyField("amount", "How much money?", "", editing ? editing.amount : "") +
+      '<span class="label">Spent on what? <span class="hint">Tap one</span></span><div class="choices">' + cats + "</div>" +
+      '<label for="note">Details <span class="hint">Optional, e.g. “10 kg onion from Ramesh”</span></label>' +
+      '<input type="text" id="note" name="note" autocomplete="off" value="' + esc(editing ? editing.note : "") + '">' +
+      '<button class="btn big go" type="submit">' + (editing ? "✓ Save changes" : "✓ Add") + "</button>" +
+      (editing ? '<button class="btn big light" type="button" data-go="spent" data-day="' + U.day + '">Cancel</button>' : "") + "</form>";
+    h += "<h2>Already added: " + rs(sum(list, "amount")) + "</h2>";
+    if (!list.length) return h + '<p class="muted">Nothing added yet.</p>';
+    return h + '<ul class="list">' + list.map(function (x) {
+      return '<li class="' + (x.id === U.editId ? "editing" : "") + '"><div><div class="what">' + rs(x.amount) + " · " + esc(x.cat) + "</div>" +
+        (x.note ? '<div class="muted small">' + esc(x.note) + "</div>" : "") + '</div><div class="row">' +
+        '<button type="button" class="btn light sm" data-go="spent" data-day="' + x.date + '" data-id="' + x.id + '">✏️ Change</button>' +
+        removeBtn("spent:" + x.id) + "</div></li>"; }).join("") + "</ul>";
+  };
+
+  V.stock = function () {
+    var h = "<h1>📦 Stock Left</h1>" + flashHtml();
+    if (!D.items.length) {
+      return h + '<div class="card"><p style="margin-top:0"><strong>No items yet.</strong></p>' +
+        "<p>Add the things you keep in the kitchen, like Onion, Oil, Rice, Paneer. Then come here every day and type how much is left.</p>" +
+        '<button class="btn big" type="button" data-go="stocknew">➕ Add first item</button></div>';
+    }
+    var t = today();
+    var items = D.items.slice().sort(function (a, b) { return a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1; });
+    h += '<p class="lead">Check the kitchen and type how much is left now. Leave a box empty if it hasn\'t changed.</p>' +
+      '<form data-form="stock" class="stack">' + items.map(function (i) {
+        var low = Number(i.qty) <= Number(i.low);
+        return '<div class="stock-row' + (low ? " low" : "") + '"><div><label for="q_' + i.id + '">' + esc(i.name) + "</label>" +
+          '<div class="muted small">Last count: ' + q(i.qty) + " " + esc(i.unit) + (i.countedOn === t ? " · ✅ today" : "") +
+          (low ? ' · <strong style="color:var(--bad)">running low</strong>' : "") + "</div>" +
+          '<button type="button" class="linkish" data-go="stockedit" data-id="' + i.id + '">✏️ change item</button></div>' +
+          '<div><input type="text" inputmode="decimal" autocomplete="off" id="q_' + i.id + '" name="' + i.id + '" placeholder="' + q(i.qty) + '">' +
+          '<div class="muted small" style="text-align:center">' + esc(i.unit) + "</div></div></div>";
+      }).join("") + '<button class="btn big go" type="submit">✓ Save stock</button></form>' +
+      '<div class="footer"><button type="button" class="btn light" data-go="stocknew">➕ Add new item</button>' +
+      '<button type="button" class="btn light" data-go="buy">🛒 Need to buy</button></div>';
+    return h;
+  };
+
+  function unitSelect(sel) {
+    return '<select id="unit" name="unit">' + UNITS.map(function (u) { return "<option" + (u === sel ? " selected" : "") + ">" + u + "</option>"; }).join("") + "</select>";
+  }
+  V.stocknew = function () {
+    return "<h1>➕ Add new item</h1>" + flashHtml() + '<form class="card" data-form="stocknew">' +
+      '<label for="iname">Item name <span class="hint">e.g. Onion, Cooking oil, Rice</span></label><input type="text" id="iname" name="name" autocomplete="off">' +
+      '<label for="unit">Measured in</label>' + unitSelect("kg") +
+      '<label for="iqty">How much do you have now?</label><input type="text" inputmode="decimal" autocomplete="off" placeholder="0" id="iqty" name="qty">' +
+      '<label for="ilow">Warn me when it goes below <span class="hint">It then shows in “Need to Buy”</span></label>' +
+      '<input type="text" inputmode="decimal" autocomplete="off" placeholder="0" id="ilow" name="low">' +
+      '<button class="btn big go" type="submit" name="next" value="stock">✓ Add</button>' +
+      '<button class="btn big light" type="submit" name="next" value="again">✓ Add and add another</button></form>';
+  };
+  V.stockedit = function () {
+    var i = D.items.find(function (x) { return x.id === U.editId; });
+    if (!i) return "<h1>Item not found</h1><p>It may have been removed.</p>";
+    return "<h1>Change: " + esc(i.name) + "</h1>" + flashHtml() + '<form class="card" data-form="stockedit">' +
+      '<label for="iname">Item name</label><input type="text" id="iname" name="name" value="' + esc(i.name) + '">' +
+      '<label for="unit">Measured in</label>' + unitSelect(i.unit) +
+      '<label for="iqty">How much is there now?</label><input type="text" inputmode="decimal" id="iqty" name="qty" value="' + esc(q(i.qty)) + '">' +
+      '<label for="ilow">Warn me when it goes below</label><input type="text" inputmode="decimal" id="ilow" name="low" value="' + esc(q(i.low)) + '">' +
+      '<button class="btn big go" type="submit">✓ Save</button></form>' +
+      '<div class="footer">' + removeBtn("item:" + i.id, "🗑 Remove this item") + "</div>";
+  };
+
+  V.buy = function () {
+    var open = openBuy(), h = "<h1>🛒 Need to Buy</h1>" + flashHtml();
+    h += open.length ? '<ul class="list">' + open.map(function (b) {
+      return "<li><div><div class=\"what\">" + esc(b.name) + (b.qty ? " – " + q(b.qty) + " " + esc(b.unit || "") : "") + "</div>" +
+        (b.note ? '<div class="muted small">' + esc(b.note) + "</div>" : "") + "</div>" +
+        '<div class="row"><button type="button" class="btn go sm" data-act="bought" data-id="' + b.id + '">✓ Bought</button>' +
+        removeBtn("buy:" + b.id) + "</div></li>"; }).join("") + "</ul>" : '<p class="muted">The list is empty. 👍</p>';
+    var low = lowItems().filter(function (i) { return !open.some(function (b) { return b.name.toLowerCase() === i.name.toLowerCase(); }); });
+    if (low.length) {
+      h += '<h2>⚠️ Running low</h2><ul class="list">' + low.map(function (i) {
+        return '<li class="low"><div><div class="what">' + esc(i.name) + '</div><div class="muted small">' + q(i.qty) + " " + esc(i.unit) + " left</div></div>" +
+          '<button type="button" class="btn sm" data-act="addlow" data-id="' + i.id + '">➕ Add to list</button></li>'; }).join("") + "</ul>";
+    }
+    var names = D.items.map(function (i) { return '<option value="' + esc(i.name) + '">'; }).join("");
+    h += '<h2>Add something to buy</h2><form class="card" data-form="buy">' +
+      '<label for="bname">What?</label><input type="text" id="bname" name="name" list="known" autocomplete="off"><datalist id="known">' + names + "</datalist>" +
+      '<div class="row"><div class="grow"><label for="bqty">How much?</label><input type="text" inputmode="decimal" autocomplete="off" placeholder="0" id="bqty" name="qty"></div>' +
+      '<div class="grow"><label for="unit">Unit</label><select id="unit" name="unit"><option value="">–</option>' +
+      UNITS.map(function (u) { return "<option>" + u + "</option>"; }).join("") + "</select></div></div>" +
+      '<label for="bnote">Note <span class="hint">Optional, e.g. “from Ramesh”</span></label><input type="text" id="bnote" name="note" autocomplete="off">' +
+      '<button class="btn big" type="submit">➕ Add to list</button></form>';
+    var bought = D.buy.filter(function (b) { return b.status === "bought"; }).sort(function (a, b) { return (b.at || 0) - (a.at || 0); }).slice(0, 8);
+    if (bought.length) {
+      h += '<h2>Recently bought</h2><ul class="list">' + bought.map(function (b) {
+        return '<li class="muted"><span>✅ ' + esc(b.name) + "</span><span>" + (b.qty ? q(b.qty) + " " + esc(b.unit || "") : "") + "</span></li>"; }).join("") + "</ul>";
+    }
+    return h;
+  };
+
+  V.report = function () {
+    var ym = U.month, m = monthTotals(ym), cur = today().slice(0, 7);
+    var h = '<div class="month-nav"><button type="button" class="btn light sm" data-act="month" data-n="-1" aria-label="Previous month">◀</button>' +
+      "<h1>📊 " + esc(monthName(ym)) + "</h1>" +
+      '<button type="button" class="btn light sm" data-act="month" data-n="1" aria-label="Next month"' + (ym >= cur ? " disabled" : "") + ">▶</button></div>" + flashHtml();
+    h += '<div class="stats">' + stat("Orders", q(m.orders)) + stat("Total sales", rs(m.sales)) + stat("Money received", rs(m.received)) +
+      stat("Still to come", rs(m.toCome)) + stat("Money spent", rs(m.spent)) + stat("Sales − spent", rs(m.profit), m.profit >= 0 ? "pos" : "neg") + "</div>";
+    h += '<button type="button" class="btn big wa" data-act="sharemonth">📤 Send this month’s report</button>';
+    var cats = Object.keys(m.cats).sort(function (a, b) { return m.cats[b] - m.cats[a]; });
+    if (cats.length) {
+      h += '<h2>Where the money went</h2><ul class="list">' + cats.map(function (c) {
+        return '<li><span class="what">' + esc(c) + "</span><span>" + rs(m.cats[c]) + "</span></li>"; }).join("") + "</ul>";
+    }
+    var last = ym === cur ? today() : iso(new Date(asDate(ym + "-01").getFullYear(), asDate(ym + "-01").getMonth() + 1, 0));
+    var rows = [], d = last;
+    while (d.slice(0, 7) === ym) { rows.push(d); d = addDays(d, -1); }
+    h += '<h2>Day by day</h2><p class="muted small">Tap a day to see or change it. Red = sales not filled.</p><div class="table-wrap"><table>' +
+      "<thead><tr><th>Day</th><th>Orders</th><th>Sales</th><th>Received</th><th>To come</th><th>Spent</th><th>Sales − spent</th></tr></thead><tbody>" +
+      rows.map(function (r) {
+        var t = dayTotals(r);
+        return '<tr class="' + (t.filled ? "" : "miss") + '" data-go="sales" data-day="' + r + '"><td>' + esc(nice(r)) + "</td><td>" +
+          (t.filled ? q(t.orders) : "–") + "</td><td>" + (t.filled ? rs(t.sales) : "not filled") + "</td><td>" + (t.filled ? rs(t.received) : "") +
+          "</td><td>" + (t.filled ? rs(t.toCome) : "") + "</td><td>" + rs(t.spent) + '</td><td class="' + (t.sales - t.spent >= 0 ? "" : "neg") + '">' +
+          rs(t.sales - t.spent) + "</td></tr>"; }).join("") +
+      "</tbody><tfoot><tr><td>Total</td><td>" + q(m.orders) + "</td><td>" + rs(m.sales) + "</td><td>" + rs(m.received) + "</td><td>" + rs(m.toCome) +
+      "</td><td>" + rs(m.spent) + "</td><td>" + rs(m.profit) + "</td></tr></tfoot></table></div>";
+    return h;
+  };
+
+  V.settings = function () {
+    var h = "<h1>💾 Backup &amp; settings</h1>" + flashHtml();
+    h += '<div class="card" id="share"><h2>🔗 Share orders with other phones</h2>';
+    if (!D.code) {
+      h += "<p>Every phone with the same <strong>kitchen code</strong> gets a notification for each new order, and the order is added to its totals.</p>" +
+        '<p class="muted small">First phone: tap “Create kitchen code”. Other phones: type the same code below.</p>' +
+        '<button type="button" class="btn big" data-act="newcode">✨ Create kitchen code</button>' +
+        '<form data-form="joincode"><label for="joincode">Or type the kitchen code from the first phone</label>' +
+        '<input type="text" id="joincode" name="code" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="abcd-efgh-jkmn">' +
+        '<button class="btn big go" type="submit">✓ Join</button></form>';
+    } else {
+      h += '<p style="margin-top:0">Kitchen code (type this on the other phones):</p><div class="code">' + esc(D.code) + "</div>" + netLine() +
+        '<form data-form="phonename"><label for="phonename">This phone’s name <span class="hint">Shown with orders, e.g. Papa, Counter, Kitchen</span></label>' +
+        '<input type="text" id="phonename" name="phonename" value="' + esc(D.phoneName) + '"><button class="btn big" type="submit">✓ Save name</button></form>';
+      if (window.KitchenApp && window.KitchenApp.keepAlertsOn) {
+        h += '<p class="muted small">If order notifications stop coming, tap below and choose “Allow” / “Don’t optimise”.</p>' +
+          '<button type="button" class="btn light" data-act="keepalerts">🔔 Keep order alerts on</button>';
+      }
+      h += '<div class="footer">' + removeBtn("code:x", "Stop sharing on this phone") + "</div>";
+    }
+    h += "</div>";
+    h += '<div class="card"><h2>Backup</h2><p>Everything is kept only on this phone. Make a backup <strong>every week</strong> and send it to yourself on WhatsApp or Gmail.</p>' +
+      '<p class="muted">Last backup: ' + (D.lastBackup ? esc(nice(D.lastBackup)) : "never") + "</p>" +
+      '<button type="button" class="btn big go" data-act="backup">💾 Make backup now</button></div>';
+    h += '<div class="card"><h2>Bring back a backup</h2><p>On a new phone, choose the backup file you saved. <strong>This replaces everything on this phone.</strong></p>' +
+      '<input type="file" id="restorefile" accept=".json,application/json,text/plain">';
+    if (U.restore) {
+      h += '<div class="flash bad confirm">This backup has ' + Object.keys(U.restore.sales).length + " days of sales and " + U.restore.spent.length +
+        " expenses. Replace everything on this phone with it?" +
+        '<div class="row" style="margin-top:10px"><button type="button" class="btn go" data-act="restoreyes">Yes, bring it back</button>' +
+        '<button type="button" class="btn light" data-act="restoreno">Cancel</button></div></div>';
+    }
+    h += "</div>";
+    h += '<form class="card" data-form="settings"><h2>Kitchen name</h2><label for="kitchen">Name shown at the top and in reports</label>' +
+      '<input type="text" id="kitchen" name="kitchen" value="' + esc(D.kitchen) + '">' +
+      '<label for="kphone">Kitchen phone <span class="hint">Put in the messages sent to customers</span></label>' +
+      '<input type="tel" id="kphone" name="kphone" value="' + esc(D.kitchenPhone) + '"><button class="btn big" type="submit">✓ Save</button></form>';
+    return h;
+  };
+
+  // ---------- orders: pick dishes from the menu
+  U.cart = []; U.q = ""; U.ocat = "";
+  function menuCats() {
+    var seen = [];
+    (D.menu || []).forEach(function (d) { if (seen.indexOf(d.cat) < 0) seen.push(d.cat); });
+    return seen;
+  }
+  function skel(w) { return String(w).toLowerCase().replace(/[^a-z]/g, "").replace(/[aeiouyh]/g, "").replace(/(.)\1+/g, "$1"); }
+  function inOrder(a, b) { var i = 0; for (var j = 0; j < b.length && i < a.length; j++) if (a[i] === b[j]) i++; return i === a.length; }
+  function findDishes() {
+    var list = (D.menu || []).filter(function (d) { return !U.ocat || d.cat === U.ocat; });
+    var words = U.q.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+    if (!words.length) return list;
+    var exact = list.filter(function (d) {
+      var hay = (d.name + " " + d.cat + " " + (d.has || "")).toLowerCase();
+      return words.every(function (w) { return hay.indexOf(w) >= 0; });
+    });
+    if (exact.length) return exact;
+    // spelling slips ("labdar", "chap", "panner"): compare consonants only
+    return list.filter(function (d) {
+      var hs = skel(d.name);
+      return words.every(function (w) { var ws = skel(w); return ws.length >= 2 && inOrder(ws, hs); });
+    });
+  }
+  function popularDishes() {
+    var count = {}, since = addDays(today(), -30);
+    Object.keys(D.orders).forEach(function (k) {
+      var o = D.orders[k];
+      if (o.status !== "ok" || o.date < since) return;
+      (o.items || []).forEach(function (i) { if (i.dish) count[i.dish] = (count[i.dish] || 0) + Number(i.qty || 0); });
+    });
+    return (D.menu || []).filter(function (d) { return count[d.id]; }).sort(function (a, b) { return count[b.id] - count[a.id]; }).slice(0, 8);
+  }
+  function cartFind(key) { return U.cart.find(function (c) { return c.key === key; }); }
+  function cartTotal() { return Math.round(U.cart.reduce(function (s, c) { return s + c.qty * Number(c.price || 0); }, 0) * 100) / 100; }
+  function dishHtml(d) {
+    return '<div class="dish"><div class="dname">' + esc(d.name) + (d.has ? '<div class="muted small">' + esc(d.has) + "</div>" : "") + '</div><div class="opts">' +
+      d.opts.map(function (o, i) {
+        var c = cartFind(d.id + "|" + o.label), n = c ? c.qty : 0;
+        return '<button type="button" class="opt' + (n ? " on" : "") + '" data-act="addopt" data-id="' + esc(d.id) + '" data-i="' + i + '">' +
+          (o.label && o.label !== "MRP" ? '<span class="ol">' + esc(o.label) + "</span>" : "") +
+          '<span class="op">' + (o.price ? rs(o.price) : "MRP") + "</span>" + (n ? '<span class="cnt">' + n + "</span>" : "") + "</button>";
+      }).join("") + "</div></div>";
+  }
+  function resultsHtml() {
+    var searching = U.q.trim() || U.ocat, list = searching ? findDishes() : popularDishes(), h = "", cat = "";
+    if (!searching) {
+      if (!list.length) return '<p class="muted" style="margin:4px 0">Type a dish name above, or tap a category.</p>';
+      h += '<p class="muted small" style="margin:4px 0">Ordered most often:</p>';
+    }
+    if (!list.length) return '<p class="muted">No dish found for “' + esc(U.q) + '”. Try fewer letters, or use “Item not on menu” below.</p>';
+    list.slice(0, 80).forEach(function (d) {
+      if (searching && !U.ocat && d.cat !== cat) { cat = d.cat; h += '<div class="catline">' + esc(cat) + "</div>"; }
+      h += dishHtml(d);
+    });
+    return h;
+  }
+  function cartHtml() {
+    if (!U.cart.length) return '<p class="muted" style="margin:0">Nothing added yet. Tap a price above to add it.</p>';
+    return '<ul class="cart">' + U.cart.map(function (c) {
+      return '<li><div class="cname">' + esc(c.name) + (c.label && c.label !== "MRP" ? ' <span class="muted">(' + esc(c.label) + ")</span>" : "") + "</div>" +
+        '<div class="cline"><div class="stepper"><button type="button" data-act="dec" data-k="' + esc(c.key) + '" aria-label="One less">−</button>' +
+        '<span class="cq">' + c.qty + '</span><button type="button" data-act="inc" data-k="' + esc(c.key) + '" aria-label="One more">+</button></div>' +
+        (c.ask ? '<div class="cur mrp"><span>₹</span><input type="text" inputmode="decimal" data-k="' + esc(c.key) + '" value="' + (c.price || "") +
+          '" placeholder="price" aria-label="Price for ' + esc(c.name) + '"></div>' : '<span class="muted">× ' + rs(c.price) + "</span>") +
+        '<strong class="camt">' + rs(c.qty * Number(c.price || 0)) + "</strong></div></li>";
+    }).join("") + "</ul>";
+  }
+  // what: "results", "cart", "totals" or nothing for everything. Never redraws the name / mobile boxes.
+  function refreshOrder(what) {
+    var r = document.getElementById("results"), c = document.getElementById("cart"), t = document.getElementById("stotal");
+    if (r && (!what || what === "results")) r.innerHTML = resultsHtml();
+    if (c && (!what || what === "cart")) c.innerHTML = cartHtml();
+    var n = U.cart.reduce(function (s, x) { return s + x.qty; }, 0);
+    if (t) t.innerHTML = esc(rs(cartTotal())) + ' <small class="muted">· ' + n + " item" + (n === 1 ? "" : "s") + "</small>";
+    Array.prototype.forEach.call(document.querySelectorAll(".chip"), function (b) { b.classList.toggle("on", b.dataset.cat === U.ocat); });
+  }
+  V.order = function () {
+    var ed = U.editOrder ? D.orders[U.editOrder] : null;
+    var chips = '<button type="button" class="chip" data-act="cat" data-cat="">All</button>' + menuCats().map(function (c) {
+      return '<button type="button" class="chip" data-act="cat" data-cat="' + esc(c) + '">' + esc(c) + "</button>"; }).join("");
+    return (ed ? "<h1>✏️ Change order #" + (orderNumbers(ed.date)[ed.id] || "") + "</h1>" : "<h1>🛎️ New Order</h1>") + flashHtml() +
+      (ed ? '<div class="editing-note">Changing ' + esc(ed.name || "Customer") + "’s order from " + esc(nice(ed.date).toLowerCase()) + ", " + esc(tm(ed.at)) +
+        '. Fix it and press Save changes. <button type="button" class="btn light sm" data-act="canceledit">Don’t change</button></div>' : "") +
+      '<form data-form="order" id="orderform" class="stack">' +
+      '<div class="card" style="margin:0"><div class="row pair"><div class="grow"><label for="cname" style="margin-top:0">Name</label>' +
+      '<input type="text" id="cname" name="cname" autocomplete="off" value="' + esc(ed ? ed.name : "") + '"></div><div class="grow"><label for="cmobile" style="margin-top:0">Mobile</label>' +
+      '<input type="tel" inputmode="tel" id="cmobile" name="cmobile" autocomplete="off" maxlength="15" value="' + esc(ed ? ed.mobile : "") + '"></div></div></div>' +
+      '<div class="card" style="margin:0"><label for="msearch" style="margin-top:0">🔍 Find a dish</label>' +
+      '<input type="search" id="msearch" autocomplete="off" placeholder="e.g. paneer, dal, naan, thali" value="' + esc(U.q) + '">' +
+      '<div class="chips">' + chips + '</div><div id="results"></div>' +
+      '<details class="custom"><summary>➕ Item not on menu</summary><div class="row"><div class="grow"><label for="xname">Item</label>' +
+      '<input type="text" id="xname" autocomplete="off"></div><div class="grow"><label for="xprice">Price for 1</label>' +
+      '<div class="cur"><span>₹</span><input type="text" inputmode="decimal" id="xprice" placeholder="0"></div></div></div>' +
+      '<button type="button" class="btn light" style="margin-top:10px" data-act="addcustom">Add to order</button></details></div>' +
+      '<div class="card" style="margin:0"><h2 style="margin-top:0">This order</h2><div id="cart"></div>' +
+      '<span class="label">Payment</span><div class="choices two">' +
+      '<input type="radio" name="paid" id="paidyes" value="yes"' + (!ed || ed.paid ? " checked" : "") + '><label for="paidyes"><span class="icon" aria-hidden="true">✅</span>Payment done</label>' +
+      '<input type="radio" name="paid" id="paidno" value="no"' + (ed && !ed.paid ? " checked" : "") + '><label for="paidno"><span class="icon" aria-hidden="true">⏳</span>Payment not done</label></div>' +
+      '<label for="onote">Note <span class="hint">Optional, e.g. “less spicy”, address</span></label><input type="text" id="onote" name="onote" autocomplete="off" value="' + esc(ed ? ed.note : "") + '">' +
+      '<div class="footer"><button type="button" class="btn red sm" data-act="clearcart">Clear order</button></div></div></form>' +
+      '<div class="savebar"><span id="stotal">₹0</span><button type="submit" form="orderform" class="btn go">' + (ed ? "✓ Save changes" : "✓ Save order") + "</button></div>";
+  };
+  V.orderAfter = function () { refreshOrder(); };
+
+  // ---------- menu (change prices, add dishes)
+  V.menu = function () {
+    var h = "<h1>📖 Menu</h1>" + flashHtml() + '<p class="lead">' + (D.menu || []).length + " dishes. Tap ✏️ Change to fix a price.</p>" +
+      '<button type="button" class="btn big" data-go="dish">➕ Add a dish</button>';
+    menuCats().forEach(function (c) {
+      h += "<h2>" + esc(c) + '</h2><ul class="list">' + D.menu.filter(function (d) { return d.cat === c; }).map(function (d) {
+        return '<li><div><div class="what">' + esc(d.name) + '</div><div class="muted small">' + esc(d.opts.map(function (o) {
+          return (o.label && o.label !== "MRP" ? o.label + " " : "") + (o.price ? rs(o.price) : "MRP"); }).join(" · ")) + "</div></div>" +
+          '<button type="button" class="btn light sm" data-go="dish" data-id="' + esc(d.id) + '">✏️ Change</button></li>';
+      }).join("") + "</ul>";
+    });
+    return h;
+  };
+  V.dish = function () {
+    var d = U.editId ? (D.menu || []).find(function (x) { return x.id === U.editId; }) : null, opts = d ? d.opts.slice() : [];
+    while (opts.length < 4) opts.push({ label: "", price: "" });
+    var h = "<h1>" + (d ? "Change: " + esc(d.name) : "➕ Add a dish") + "</h1>" + flashHtml() + '<form class="card" data-form="dish">' +
+      '<label for="dcat">Category</label><input type="text" id="dcat" name="cat" list="dcats" value="' + esc(d ? d.cat : "") + '">' +
+      '<datalist id="dcats">' + menuCats().map(function (c) { return '<option value="' + esc(c) + '">'; }).join("") + "</datalist>" +
+      '<label for="dname">Dish name</label><input type="text" id="dname" name="name" value="' + esc(d ? d.name : "") + '">' +
+      '<label for="dhas">What is inside <span class="hint">Optional, for combos and thalis</span></label><input type="text" id="dhas" name="has" value="' + esc(d ? d.has : "") + '">' +
+      '<span class="label">Sizes and prices <span class="hint">Leave “Size” empty if there is only one price. Price 0 means MRP, typed when ordering.</span></span>' +
+      opts.map(function (o, i) {
+        return '<div class="row"><div class="grow"><label for="ol' + i + '">Size</label><input type="text" id="ol' + i + '" name="ol' + i + '" list="sizes" placeholder="Half / Full / Qtr" value="' + esc(o.label) + '"></div>' +
+          '<div class="grow"><label for="op' + i + '">Price</label><div class="cur"><span>₹</span><input type="text" inputmode="decimal" id="op' + i + '" name="op' + i + '" value="' + esc(o.price) + '"></div></div></div>';
+      }).join("") + '<datalist id="sizes"><option value="Qtr"><option value="Half"><option value="Full"><option value="MRP"></datalist>' +
+      '<button class="btn big go" type="submit">✓ Save</button></form>';
+    if (d) h += '<div class="footer">' + removeBtn("dish:" + d.id, "🗑 Remove this dish") + "</div>";
+    return h;
+  };
+
+  var UNDO_MS = 2 * 60 * 1000;
+  function itemsText(o) { return (o.items || []).map(function (i) { return q(i.qty) + "× " + i.name; }).join(", "); }
+  function tm(ts) { return new Date(ts).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" }); }
+  // Order numbers count up through the day, in the order they were taken (same on every phone).
+  function orderNumbers(d) {
+    var n = {};
+    Object.keys(D.orders).map(function (k) { return D.orders[k]; })
+      .filter(function (o) { return o.date === d && o.status !== "deleted" && !o.ghost; })
+      .sort(function (a, b) { return a.at - b.at; })
+      .forEach(function (o, i) { n[o.id] = i + 1; });
+    return n;
+  }
+  function itemsSold(list) {
+    var m = {};
+    list.forEach(function (o) {
+      if (o.status !== "ok") return;
+      (o.items || []).forEach(function (i) {
+        var r = m[i.name] || (m[i.name] = { name: i.name, qty: 0, amount: 0 });
+        r.qty += Number(i.qty || 0); r.amount += Number(i.qty || 0) * Number(i.price || 0);
+      });
+    });
+    return Object.keys(m).map(function (k) { return m[k]; }).sort(function (a, b) { return b.qty - a.qty || b.amount - a.amount; });
+  }
+  function itemsTable(rows) {
+    if (!rows.length) return '<p class="muted">No dishes sold.</p>';
+    var tq = 0, ta = 0;
+    rows.forEach(function (r) { tq += r.qty; ta += r.amount; });
+    return '<div class="table-wrap"><table><thead><tr><th>Dish</th><th>Qty</th><th>Amount</th></tr></thead><tbody>' +
+      rows.map(function (r) { return "<tr><td>" + esc(r.name) + "</td><td>" + q(r.qty) + "</td><td>" + rs(r.amount) + "</td></tr>"; }).join("") +
+      "</tbody><tfoot><tr><td>Total</td><td>" + q(tq) + "</td><td>" + rs(ta) + "</td></tr></tfoot></table></div>";
+  }
+  // Orders from before "Delivered" existed count as delivered once their day is over.
+  function isDone(o) { return o.done === true || (o.done === undefined && o.date < today()); }
+  function phoneDigits(m) {
+    var d = String(m || "").replace(/\D/g, "");
+    if (d.length === 11 && d[0] === "0") d = d.slice(1);
+    return d.length === 10 ? "91" + d : d;
+  }
+  function orderText(o) {
+    var num = orderNumbers(o.date)[o.id] || "";
+    var lines = ["🧾 *" + D.kitchen + "* – Order #" + num,
+      "🕒 " + asDate(o.date).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) + ", " + tm(o.at),
+      "👤 " + (o.name || "Customer") + (o.mobile ? " · 📞 " + o.mobile : ""), ""];
+    (o.items || []).forEach(function (i) { lines.push(q(i.qty) + " × " + i.name + " = " + rs(i.qty * i.price)); });
+    lines.push("", "*Total: " + rs(o.total) + "*",
+      o.status !== "ok" ? "✕ Cancelled" : (isDone(o) ? "✅ Delivered" : "🍳 Pending") + " · " + (o.paid ? "💰 Payment done" : "⏳ Payment pending"));
+    if (o.note) lines.push("📝 " + o.note);
+    if (o.by) lines.push("Taken by " + o.by);
+    return lines.join("\n");
+  }
+  function customerText(o) {
+    var lines = ["Namaste " + (o.name || "") + " 🙏", "Thank you for ordering from " + D.kitchen + ".", ""];
+    (o.items || []).forEach(function (i) { lines.push(q(i.qty) + " × " + i.name); });
+    lines.push("", "Total: " + rs(o.total) + (o.paid ? " (paid, thank you)" : " (to pay)"),
+      isDone(o) ? "Your order has been delivered. Enjoy your meal!" : "Your order is being prepared.");
+    if (D.kitchenPhone) lines.push("For any help call " + D.kitchenPhone + ".");
+    return lines.join("\n");
+  }
+  function orderCard(o, num, now) {
+    var gone = o.status !== "ok", done = isDone(o);
+    var h = '<li class="ocard' + (gone ? " gone" : o.paid && done ? " paid" : "") + '"><div class="ohead"><span class="onum">#' + num + "</span>" +
+      '<span class="oname">' + esc(o.name || "Customer") + '</span><span class="oamt">' + rs(o.total) + "</span></div>" +
+      '<div class="items">' + esc(itemsText(o)) + "</div><div class=\"pills\">" +
+      '<span class="pill taken">🕒 Taken ' + esc(tm(o.at)) + "</span>" +
+      (gone ? '<span class="pill gone">✕ Cancelled' + (o.cancelledAt ? " " + esc(tm(o.cancelledAt)) : "") + "</span>"
+        : (done ? '<span class="pill done">✅ Delivered' + (o.doneAt ? " " + esc(tm(o.doneAt)) : "") + "</span>" : '<span class="pill pending">🍳 Pending</span>') +
+          (o.paid ? '<span class="pill paid">💰 Payment done' + (o.paidAt ? " " + esc(tm(o.paidAt)) : "") + "</span>" : '<span class="pill unpaid">⏳ Payment pending</span>')) +
+      "</div>";
+    var meta = [];
+    if (o.mobile) meta.push('<a class="tel" href="tel:' + esc(o.mobile) + '">📞 ' + esc(o.mobile) + "</a>");
+    if (o.by) meta.push("by " + esc(o.by));
+    if (o.editedAt) meta.push("changed " + esc(tm(o.editedAt)));
+    if (o.note) meta.push(esc(o.note));
+    if (meta.length) h += '<div class="ometa muted small">' + meta.join(" · ") + "</div>";
+    if (!gone) {
+      h += '<div class="oacts">' +
+        (done ? '<button type="button" class="btn light sm" data-act="undone" data-id="' + o.id + '">Mark pending</button>'
+          : '<button type="button" class="btn go sm" data-act="done" data-id="' + o.id + '">✅ Delivered</button>') +
+        (o.paid ? '<button type="button" class="btn light sm" data-act="unpaid" data-id="' + o.id + '">Mark payment pending</button>'
+          : '<button type="button" class="btn go sm" data-act="gotpaid" data-id="' + o.id + '">💰 Payment done</button>') +
+        (now - o.at < UNDO_MS ? '<button type="button" class="btn red sm" data-act="undo" data-id="' + o.id + '">↩️ Undo</button>' : "") + "</div>";
+    }
+    h += '<div class="oacts second"><button type="button" class="btn wa" data-act="shareorder" data-id="' + o.id + '">📤 Share</button>';
+    if (o.mobile && !gone) {
+      h += '<a class="btn light" href="sms:' + esc(o.mobile) + "?body=" + encodeURIComponent(customerText(o)) + '">💬 SMS</a>' +
+        '<a class="btn light" href="https://wa.me/' + phoneDigits(o.mobile) + "?text=" + encodeURIComponent(customerText(o)) + '" target="_blank" rel="noopener">🟢 WhatsApp</a>';
+    }
+    if (!gone) h += '<button type="button" class="btn light" data-act="editorder" data-id="' + o.id + '">✏️ Edit</button>';
+    h += removeBtn("order:" + o.id, "🗑 Delete") + "</div>";
+    return h + "</li>";
+  }
+  // All orders still pending (any day) and all payments still pending (any day).
+  function pendingLists() {
+    var all = Object.keys(D.orders).map(function (k) { return D.orders[k]; })
+      .filter(function (o) { return o.status === "ok" && !o.ghost; })
+      .sort(function (a, b) { return b.at - a.at; });
+    return { orders: all.filter(function (o) { return !isDone(o); }), pay: all.filter(function (o) { return !o.paid; }) };
+  }
+  function pendingBox() {
+    var p = pendingLists(), amt = p.pay.reduce(function (s, o) { return s + Number(o.total || 0); }, 0);
+    if (!p.orders.length && !p.pay.length) return '<div class="alertbox"><button type="button" class="ok" data-go="pending">✅ No pending orders or payments</button></div>';
+    return '<div class="alertbox">' +
+      (p.orders.length ? '<button type="button" data-go="pending">🍳 ' + p.orders.length + " order" + (p.orders.length === 1 ? "" : "s") + " pending <span>›</span></button>" : "") +
+      (p.pay.length ? '<button type="button" data-go="pending">⏳ Payment pending: ' + p.pay.length + " · " + rs(amt) + " <span>›</span></button>" : "") + "</div>";
+  }
+  V.pending = function () {
+    var p = pendingLists(), now = Date.now(), amt = p.pay.reduce(function (s, o) { return s + Number(o.total || 0); }, 0);
+    function cards(list) {
+      return '<ul class="olist">' + list.map(function (o) {
+        return orderCard(o, (orderNumbers(o.date)[o.id] || "") + (o.date !== today() ? " · " + nice(o.date) : ""), now);
+      }).join("") + "</ul>";
+    }
+    var h = "<h1>⏳ Pending</h1>" + flashHtml();
+    h += "<h2>🍳 Orders not delivered (" + p.orders.length + ")</h2>" + (p.orders.length ? cards(p.orders) : '<p class="muted">None. 👍</p>');
+    h += "<h2>💰 Payments pending (" + p.pay.length + " · " + rs(amt) + ")</h2>" + (p.pay.length ? cards(p.pay) : '<p class="muted">None. 👍</p>');
+    return h;
+  };
+  V.orders = function () {
+    var all = ordersOn(U.day), st = orderStats(all), now = Date.now(), nums = orderNumbers(U.day), f = U.ofilter || "all";
+    var count = { all: all.length, pending: 0, unpaid: 0, paid: 0, gone: 0 };
+    all.forEach(function (o) {
+      if (o.status !== "ok") { count.gone++; return; }
+      if (!isDone(o)) count.pending++;
+      if (o.paid) count.paid++; else count.unpaid++;
+    });
+    var list = all.filter(function (o) {
+      if (f === "all") return true;
+      if (f === "gone") return o.status !== "ok";
+      if (o.status !== "ok") return false;
+      return f === "pending" ? !isDone(o) : f === "paid" ? o.paid : !o.paid;
+    });
+    var h = '<div class="row" style="justify-content:space-between"><h1>📋 Orders: ' + esc(nice(U.day)) + "</h1>" +
+      '<button type="button" class="btn light sm" data-go="history">📅 Past days</button></div>' + dayPicker() + flashHtml() + netLine();
+    var recent = U.lastOrder && D.orders[U.lastOrder];
+    if (recent && recent.status === "ok" && now - recent.at < UNDO_MS) {
+      h += '<div class="flash ok">Order #' + (nums[recent.id] || "") + " saved ✅ " + esc(recent.name || "Customer") + " · " + rs(recent.total) +
+        '<div class="row" style="margin-top:8px"><button type="button" class="btn wa" data-act="shareorder" data-id="' + recent.id + '">📤 Share to WhatsApp group</button>' +
+        '<button type="button" class="btn red" data-act="undo" data-id="' + recent.id + '">↩️ Undo</button></div></div>';
+    }
+    if (U.day === today()) h += '<button type="button" class="btn take go" data-go="order">🛎️ Take an order</button>' + pendingBox();
+    h += '<div class="stats" style="margin-top:14px">' + stat("Orders", q(st.count)) + stat("Total", rs(st.total)) +
+      stat("Payment done", rs(st.paid)) + stat("Payment pending", rs(st.unpaid), st.unpaid ? "neg" : "") + "</div>";
+    if (!all.length) return h + '<p class="muted">No orders for ' + esc(nice(U.day).toLowerCase()) + ".</p>";
+    h += '<div class="ofilter">' + [["all", "All"], ["pending", "🍳 Pending"], ["unpaid", "⏳ Payment pending"], ["paid", "💰 Paid"]]
+      .concat(count.gone ? [["gone", "✕ Cancelled"]] : []).map(function (c) {
+      return '<button type="button" class="chip' + (f === c[0] ? " on" : "") + '" data-act="ofilter" data-f="' + c[0] + '">' + c[1] + " (" + count[c[0]] + ")</button>";
+    }).join("") + "</div>";
+    h += list.length ? '<ul class="olist">' + list.map(function (o) { return orderCard(o, nums[o.id], now); }).join("") + "</ul>"
+      : '<p class="muted">No orders here.</p>';
+    h += "<h2>Dishes sold " + esc(nice(U.day).toLowerCase()) + "</h2>" + itemsTable(itemsSold(all)) +
+      '<div class="footer"><button type="button" class="btn wa" data-act="shareorders">📤 Send this day’s orders</button></div>';
+    return h;
+  };
+  function ordersReport(d) {
+    var all = ordersOn(d), st = orderStats(all), nums = orderNumbers(d);
+    var lines = ["🧾 " + D.kitchen + " – orders " + asDate(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }), "",
+      "Orders: " + st.count + "   Total: " + rs(st.total), "Payment done: " + rs(st.paid) + "   Not done: " + rs(st.unpaid), "", "Dishes sold:"];
+    itemsSold(all).forEach(function (r) { lines.push("  • " + q(r.qty) + " × " + r.name + " = " + rs(r.amount)); });
+    var unpaid = all.filter(function (o) { return o.status === "ok" && !o.paid; }).sort(function (a, b) { return a.at - b.at; });
+    if (unpaid.length) {
+      lines.push("", "Payment not done:");
+      unpaid.forEach(function (o) { lines.push("  • #" + nums[o.id] + " " + (o.name || "Customer") + (o.mobile ? " " + o.mobile : "") + " – " + rs(o.total)); });
+    }
+    return lines.join("\n");
+  }
+
+  // ---------- past days: orders, dishes and money for each day
+  V.history = function () {
+    var ym = U.month || today().slice(0, 7), cur = today().slice(0, 7), days = {};
+    Object.keys(D.orders).forEach(function (k) {
+      var o = D.orders[k];
+      if (o.ghost || o.status === "deleted" || String(o.date).slice(0, 7) !== ym) return;
+      days[o.date] = 1;
+    });
+    var rows = Object.keys(days).sort().reverse().map(function (d) {
+      var list = ordersOn(d), st = orderStats(list), items = itemsSold(list).reduce(function (s, r) { return s + r.qty; }, 0);
+      return { d: d, st: st, items: items };
+    });
+    var t = { count: 0, total: 0, paid: 0, unpaid: 0, items: 0 };
+    rows.forEach(function (r) { t.count += r.st.count; t.total += r.st.total; t.paid += r.st.paid; t.unpaid += r.st.unpaid; t.items += r.items; });
+    var h = '<div class="month-nav"><button type="button" class="btn light sm" data-act="hmonth" data-n="-1" aria-label="Previous month">◀</button>' +
+      "<h1>📅 " + esc(monthName(ym)) + "</h1>" +
+      '<button type="button" class="btn light sm" data-act="hmonth" data-n="1" aria-label="Next month"' + (ym >= cur ? " disabled" : "") + ">▶</button></div>" + flashHtml();
+    h += '<div class="stats">' + stat("Orders", q(t.count)) + stat("Dishes", q(t.items)) + stat("Total", rs(t.total)) +
+      stat("Payment done", rs(t.paid)) + stat("Payment pending", rs(t.unpaid), t.unpaid ? "neg" : "") + stat("Days with orders", q(rows.length)) + "</div>";
+    if (!rows.length) return h + '<p class="muted">No orders in this month.</p>';
+    h += '<h2>Day by day</h2><p class="muted small">Tap a day to see its orders and dishes.</p><div class="table-wrap"><table>' +
+      "<thead><tr><th>Day</th><th>Orders</th><th>Dishes</th><th>Total</th><th>Paid</th><th>Not paid</th></tr></thead><tbody>" +
+      rows.map(function (r) {
+        return '<tr data-go="orders" data-day="' + r.d + '"><td>' + esc(nice(r.d)) + "</td><td>" + q(r.st.count) + "</td><td>" + q(r.items) + "</td><td>" +
+          rs(r.st.total) + "</td><td>" + rs(r.st.paid) + '</td><td class="' + (r.st.unpaid ? "neg" : "") + '">' + rs(r.st.unpaid) + "</td></tr>";
+      }).join("") + "</tbody></table></div>";
+    var monthOrders = [];
+    rows.forEach(function (r) { monthOrders = monthOrders.concat(ordersOn(r.d)); });
+    h += "<h2>Dishes sold in " + esc(monthName(ym)) + "</h2>" + itemsTable(itemsSold(monthOrders));
+    return h;
+  };
+
+  // ---------- sharing orders between phones
+  // Each order / cancel is sealed with the kitchen code (AES-GCM, key from PBKDF2) and posted to a
+  // private topic on an ntfy server. Other phones read the topic, open the message with the same code
+  // and add it to their own book. The Android app also listens in the background to show notifications.
+  var te = new TextEncoder(), td8 = new TextDecoder(), keyCache = {};
+  function b64(bytes) { var s = ""; for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]); return btoa(s); }
+  function unb64(s) { var bin = atob(s), b = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) b[i] = bin.charCodeAt(i); return b; }
+  async function keyFor(code) {
+    if (keyCache[code]) return keyCache[code];
+    var base = await crypto.subtle.importKey("raw", te.encode(code), "PBKDF2", false, ["deriveKey"]);
+    var key = await crypto.subtle.deriveKey({ name: "PBKDF2", salt: te.encode("kitchen-book-v1"), iterations: 100000, hash: "SHA-256" },
+      base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+    var h = new Uint8Array(await crypto.subtle.digest("SHA-256", te.encode("topic:" + code)));
+    var topic = "kb-" + Array.prototype.map.call(h.slice(0, 16), function (x) { return x.toString(16).padStart(2, "0"); }).join("");
+    return (keyCache[code] = { key: key, topic: topic });
+  }
+  async function seal(code, obj) {
+    var k = await keyFor(code), iv = crypto.getRandomValues(new Uint8Array(12));
+    var ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, k.key, te.encode(JSON.stringify(obj))));
+    var all = new Uint8Array(12 + ct.length); all.set(iv); all.set(ct, 12);
+    return "KB1:" + b64(all);
+  }
+  async function unseal(code, text) {
+    if (!text || text.indexOf("KB1:") !== 0) return null;
+    try {
+      var k = await keyFor(code), all = unb64(text.slice(4));
+      return JSON.parse(td8.decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: all.slice(0, 12) }, k.key, all.slice(12))));
+    } catch (e) { return null; }
+  }
+  window.kbSeal = seal; window.kbUnseal = unseal;   // used by the test page only
+  function server() { return String(D.server || "https://ntfy.sh").replace(/\/+$/, ""); }
+  var net = { state: "idle" };
+  function netLine() {
+    if (!D.code) return "";
+    var n = D.outbox.length;
+    if (n) return '<div class="netline off">📴 ' + n + " update" + (n === 1 ? "" : "s") + " waiting for internet. They will be sent automatically.</div>";
+    if (net.state === "off") return '<div class="netline off">📴 No internet. New orders are saved here and sent later.</div>';
+    return '<div class="netline ok">🔗 Sharing orders with other phones</div>';
+  }
+  function bridgeSetup() {
+    if (window.KitchenApp && window.KitchenApp.setup) {
+      try { window.KitchenApp.setup(D.code || "", server(), D.deviceId); } catch (e) {}
+    }
+  }
+  function sendEvent(ev) {
+    if (!D.code) return;
+    ev.from = D.deviceId; ev.by = D.phoneName || ""; ev.at = ev.at || Date.now();
+    D.outbox.push(ev); save(); flush();
+  }
+  function applyEvent(ev) {
+    if (ev && ev.t === "dish" && ev.d && ev.d.id) {
+      var at = (D.menu || []).findIndex(function (x) { return x.id === ev.d.id; });
+      if (at >= 0) D.menu[at] = ev.d; else D.menu.push(ev.d);
+      D.menuEdited = true; D.menuTouched = D.menuTouched || {}; D.menuTouched[ev.d.id] = 1; return true;
+    }
+    if (ev && ev.t === "dishdel") {
+      var before = (D.menu || []).length;
+      D.menu = (D.menu || []).filter(function (x) { return x.id !== ev.id; });
+      if (D.menu.length !== before) { D.menuEdited = true; return true; }
+      return false;
+    }
+    if (!ev || !ev.t || !ev.id) return false;
+    var o = D.orders[ev.id];
+    if (ev.t === "order") {
+      if (!ev.o) return false;
+      if (!o) { D.orders[ev.id] = ev.o; if (ev.from !== D.deviceId) incoming.push(ev.o); return true; }
+      if (o.ghost) { var keep = o.status; D.orders[ev.id] = ev.o; D.orders[ev.id].status = keep; return true; }
+      return false;
+    }
+    if (!o) {   // a cancel that arrived before its order: remember it
+      if (ev.t === "paid") return false;
+      D.orders[ev.id] = { id: ev.id, ghost: true, status: ev.t === "undo" ? "deleted" : "cancelled", date: ev.date || today(), at: ev.at || Date.now(), items: [], total: 0 };
+      return true;
+    }
+    if (ev.t === "undo" && o.status !== "deleted") { o.status = "deleted"; return true; }
+    if (ev.t === "edit" && ev.o && o.status !== "deleted" && (ev.o.editedAt || 0) >= (o.editedAt || 0)) { D.orders[ev.id] = ev.o; return true; }
+    if (ev.t === "done" && !o.done) { o.done = true; o.doneAt = ev.at; return true; }
+    if (ev.t === "undone" && o.done !== false) { o.done = false; o.doneAt = null; return true; }
+    if (ev.t === "cancel" && o.status === "ok") { o.status = "cancelled"; o.cancelledAt = ev.at; return true; }
+    if (ev.t === "paid" && !o.paid) { o.paid = true; o.paidAt = ev.at; return true; }
+    if (ev.t === "unpaid" && o.paid) { o.paid = false; o.paidAt = null; return true; }
+    return false;
+  }
+  var flushing = false, polling = false, incoming = [];
+  // In a web browser (not the Android app) show a notification for orders from other phones while the page is open.
+  function browserNotify() {
+    var list = incoming.splice(0);
+    if (window.KitchenApp || !("Notification" in window) || Notification.permission !== "granted") return;
+    list.slice(-3).forEach(function (o) {
+      try { new Notification("🛎️ New order · " + (o.name || "Customer") + " · " + rs(o.total), { body: itemsText(o), icon: "icon-192.png", tag: o.id }); } catch (e) {}
+    });
+  }
+  function askBrowserNotify() {
+    if (!window.KitchenApp && "Notification" in window && Notification.permission === "default") { try { Notification.requestPermission(); } catch (e) {} }
+  }
+  async function flush() {
+    if (flushing || !D.code || !D.outbox.length) return;
+    flushing = true;
+    try {
+      var k = await keyFor(D.code);
+      while (D.outbox.length) {
+        var body = await seal(D.code, D.outbox[0]);
+        var r = await fetch(server() + "/" + k.topic, { method: "POST", body: body });
+        if (!r.ok) throw new Error("send " + r.status);
+        D.outbox.shift(); save();
+      }
+      net.state = "ok";
+    } catch (e) { net.state = "off"; }
+    finally { flushing = false; softRender(); }
+  }
+  async function poll() {
+    if (polling || !D.code) return;
+    polling = true;
+    var changed = false;
+    try {
+      // events the Android app already received in the background
+      if (window.KitchenApp && window.KitchenApp.takeInbox) {
+        var inbox = [];
+        try { inbox = JSON.parse(window.KitchenApp.takeInbox() || "[]"); } catch (e) {}
+        inbox.forEach(function (ev) { if (applyEvent(ev)) changed = true; });
+      }
+      var k = await keyFor(D.code);
+      var r = await fetch(server() + "/" + k.topic + "/json?poll=1&since=" + encodeURIComponent(D.sync.last || "12h"));
+      if (!r.ok) throw new Error("poll " + r.status);
+      var lines = (await r.text()).split("\n");
+      for (var i = 0; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        var m = JSON.parse(lines[i]);
+        if (m.event !== "message") continue;
+        D.sync.last = m.id;
+        if (applyEvent(await unseal(D.code, m.message))) changed = true;
+      }
+      net.state = "ok";
+    } catch (e) { net.state = "off"; }
+    finally {
+      polling = false; save();
+      if (changed) say("ok", "Updates from other phones added ✅");
+      browserNotify();
+      softRender(changed);
+    }
+  }
+  // Re-draw for new data, but never while someone is typing in a form.
+  function softRender(force) {
+    if (U.dirty) return;
+    if (force || U.view === "orders" || U.view === "settings") render();
+  }
+  function syncNow() { flush(); poll(); }
+  window.addEventListener("online", syncNow);
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) syncNow(); });
+  setInterval(syncNow, 30000);
+  setInterval(function () { if (U.view === "orders" && !U.dirty) render(); }, 30000);   // hides Undo after 2 minutes
+  function makeCode() {
+    var abc = "abcdefghjkmnpqrstuvwxyz23456789", out = "", r = crypto.getRandomValues(new Uint8Array(12));
+    for (var i = 0; i < 12; i++) { out += abc[r[i] % abc.length]; if (i === 3 || i === 7) out += "-"; }
+    return out;
+  }
+  function setCode(code) {
+    D.code = code; D.sync = { last: null }; D.outbox = []; keyCache = {};
+    if (code) askBrowserNotify();
+    save(); bridgeSetup(); syncNow();
+  }
+
+  // ---------- render
+  function render() {
+    document.getElementById("homeBtn").hidden = U.view === "home";
+    document.getElementById("kname").textContent = D.kitchen;
+    app.innerHTML = V[U.view]();
+    if (V[U.view + "After"]) V[U.view + "After"]();
+  }
+
+  // ---------- saving forms
+  function base() { return { at: Date.now() }; }
+  var forms = {
+    order: function (f) {
+      if (!U.cart.length) throw new Error("Please add at least one dish. Search for it and tap its price.");
+      var noPrice = U.cart.find(function (c) { return !(Number(c.price) > 0); });
+      if (noPrice) throw new Error("Please type the price (MRP) for " + noPrice.name + ".");
+      var items = U.cart.map(function (c) {
+        return { name: c.label && c.label !== "MRP" ? c.name + " (" + c.label + ")" : c.name, qty: c.qty, price: Number(c.price), dish: c.dish || null,
+          base: c.name, label: c.label || "", ask: !!c.ask };
+      });
+      var total = cartTotal();
+      var mobile = f.cmobile.value.replace(/[^0-9+]/g, "");
+      if (mobile && mobile.replace(/\D/g, "").length < 10) throw new Error("The mobile number looks too short. Please check it.");
+      var paidNow = f.querySelector("input[name=paid]:checked").value === "yes";
+      var ed = U.editOrder ? D.orders[U.editOrder] : null;
+      if (ed) {
+        if (paidNow && !ed.paid) ed.paidAt = Date.now();
+        if (!paidNow) ed.paidAt = null;
+        ed.name = f.cname.value.trim(); ed.mobile = mobile; ed.items = items; ed.total = total; ed.paid = paidNow;
+        ed.note = f.onote.value.trim(); ed.editedAt = Date.now();
+        save(); sendEvent({ t: "edit", id: ed.id, o: ed });
+        U.cart = []; U.q = ""; U.ocat = ""; U.editOrder = null;
+        say("ok", "Order changed ✅ " + (ed.name || "Customer") + " · " + rs(total));
+        go("orders", { day: ed.date });
+        return;
+      }
+      var o = { id: newId(), date: today(), at: Date.now(), name: f.cname.value.trim(), mobile: mobile, items: items, total: total,
+        paid: f.querySelector("input[name=paid]:checked").value === "yes", note: f.onote.value.trim(), status: "ok", by: D.phoneName || "" };
+      if (o.paid) o.paidAt = o.at;
+      D.orders[o.id] = o; save();
+      sendEvent({ t: "order", id: o.id, o: o });
+      U.cart = []; U.q = ""; U.ocat = ""; U.lastOrder = o.id;
+      go("orders");
+    },
+    dish: function (f) {
+      var el = f.elements, name = el.name.value.trim(), cat = el.cat.value.trim(), opts = [];
+      if (!name) throw new Error("Please type the dish name.");
+      if (!cat) throw new Error("Please type a category, e.g. Main Course.");
+      for (var i = 0; i < 4; i++) {
+        var l = el["ol" + i].value.trim(), pt = el["op" + i].value.trim();
+        if (!l && pt === "") continue;
+        opts.push({ label: l, price: num(pt, "Price") });
+      }
+      if (!opts.length) throw new Error("Please type at least one price.");
+      var d = U.editId ? D.menu.find(function (x) { return x.id === U.editId; }) : null;
+      if (!d) { d = { id: "u" + newId() }; D.menu.push(d); }
+      d.cat = cat; d.name = name; d.has = el.has.value.trim(); d.opts = opts;
+      D.menuEdited = true; D.menuTouched = D.menuTouched || {}; D.menuTouched[d.id] = 1; save();
+      sendEvent({ t: "dish", id: d.id, d: d });
+      say("ok", "Saved ✅ " + name); go("menu");
+    },
+    joincode: function (f) {
+      var code = f.code.value.toLowerCase().replace(/\s+/g, "").replace(/[^a-z0-9-]/g, "");
+      if (!/^[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/.test(code)) throw new Error("The code looks like abcd-efgh-jkmn (3 groups of 4). Please check it.");
+      setCode(code); say("ok", "Joined ✅ This phone now gets orders from the other phones."); go("settings");
+    },
+    phonename: function (f) {
+      D.phoneName = f.phonename.value.trim(); save(); say("ok", "Saved ✅"); go("settings");
+    },
+    sales: function (f) {
+      D.sales[U.day] = { date: U.day, orders: num(f.orders.value, "How many orders?", true), sales: num(f.sales.value, "Total sales"),
+        received: num(f.received.value, "Money received"), toCome: num(f.toCome.value, "Money still to come"), notes: f.notes.value.trim(), at: Date.now() };
+      save(); say("ok", "Saved ✅ Sales for " + nice(U.day).toLowerCase());
+      go(U.day === today() ? "home" : "report", { month: U.day.slice(0, 7) });
+    },
+    spent: function (f) {
+      var amount = num(f.amount.value, "How much money?");
+      if (!(amount > 0)) throw new Error("Please type how much money was spent.");
+      var cat = (f.querySelector("input[name=cat]:checked") || {}).value;
+      if (!cat) throw new Error("Please tap what the money was spent on.");
+      var entry = U.editId ? D.spent.find(function (x) { return x.id === U.editId; }) : null;
+      if (entry) { entry.amount = amount; entry.cat = cat; entry.note = f.note.value.trim(); say("ok", "Changed ✅ " + rs(amount) + " for " + cat); }
+      else { D.spent.push({ id: newId(), date: U.day, amount: amount, cat: cat, note: f.note.value.trim(), at: Date.now() }); say("ok", "Saved ✅ " + rs(amount) + " for " + cat); }
+      save(); go("spent", { day: U.day });
+    },
+    stock: function (f) {
+      var t = today(), changed = 0;
+      var updates = D.items.map(function (i) { var el = f.elements[i.id]; return [i, el && el.value.trim() !== "" ? num(el.value, i.name) : null]; });
+      updates.forEach(function (u) { if (u[1] != null) { u[0].qty = u[1]; u[0].countedOn = t; changed++; } });
+      if (!changed) throw new Error("Type how much is left in at least one box.");
+      save(); say("ok", "Saved ✅ " + changed + " item" + (changed > 1 ? "s" : "") + " updated"); go("home");
+    },
+    stocknew: function (f, submitter) {
+      var name = f.name.value.trim();
+      if (!name) throw new Error("Please type the item name.");
+      if (D.items.some(function (i) { return i.name.toLowerCase() === name.toLowerCase(); })) throw new Error("“" + name + "” is already in the list.");
+      D.items.push({ id: newId(), name: name, unit: f.unit.value, qty: num(f.qty.value, "How much do you have now?"),
+        low: num(f.low.value, "Warn me when it goes below"), countedOn: null, at: Date.now() });
+      save(); say("ok", "Added ✅ " + name);
+      go(submitter && submitter.value === "again" ? "stocknew" : "stock");
+    },
+    stockedit: function (f) {
+      var i = D.items.find(function (x) { return x.id === U.editId; }), name = f.name.value.trim();
+      if (!i) return go("stock");
+      if (!name) throw new Error("Please type the item name.");
+      if (D.items.some(function (x) { return x.id !== i.id && x.name.toLowerCase() === name.toLowerCase(); })) throw new Error("Another item already has that name.");
+      var qty = num(f.qty.value, "How much is there now?");
+      if (qty !== Number(i.qty)) { i.qty = qty; i.countedOn = today(); }
+      i.name = name; i.unit = f.unit.value; i.low = num(f.low.value, "Warn me when it goes below");
+      save(); say("ok", "Saved ✅ " + name); go("stock");
+    },
+    buy: function (f) {
+      var name = f.name.value.trim();
+      if (!name) throw new Error("Please type what needs to be bought.");
+      var known = D.items.find(function (i) { return i.name.toLowerCase() === name.toLowerCase(); });
+      D.buy.push({ id: newId(), name: known ? known.name : name, qty: num(f.qty.value, "How much?"),
+        unit: f.unit.value || (known ? known.unit : ""), note: f.note.value.trim(), status: "open", at: Date.now() });
+      save(); say("ok", "Added ✅ " + name); go("buy");
+    },
+    settings: function (f) {
+      var name = f.kitchen.value.trim();
+      if (!name) throw new Error("Please type the kitchen name.");
+      D.kitchen = name; D.kitchenPhone = f.kphone.value.trim(); save(); say("ok", "Saved ✅"); go("settings");
+    }
+  };
+
+  // ---------- buttons
+  var acts = {
+    addopt: function (b) {
+      var d = (D.menu || []).find(function (x) { return x.id === b.dataset.id; });
+      if (!d) return;
+      var o = d.opts[Number(b.dataset.i)], key = d.id + "|" + o.label, c = cartFind(key);
+      if (c) c.qty++;
+      else U.cart.push({ key: key, dish: d.id, name: d.name, label: o.label, price: o.price, ask: !o.price, qty: 1 });
+      U.dirty = true; refreshOrder();
+      if (!o.price) { var inp = document.querySelector('#cart input[data-k="' + key.replace(/"/g, "") + '"]'); if (inp && !inp.value) inp.focus(); }
+    },
+    inc: function (b) { var c = cartFind(b.dataset.k); if (c) { c.qty++; refreshOrder(); } },
+    dec: function (b) {
+      var c = cartFind(b.dataset.k);
+      if (!c) return;
+      c.qty--;
+      if (c.qty <= 0) U.cart = U.cart.filter(function (x) { return x !== c; });
+      refreshOrder();
+    },
+    cat: function (b) { U.ocat = b.dataset.cat === U.ocat ? "" : b.dataset.cat; refreshOrder("results"); },
+    addcustom: function () {
+      var n = document.getElementById("xname"), p = document.getElementById("xprice");
+      var name = n.value.trim(), price = Number(String(p.value).replace(/,/g, ""));
+      if (!name) { n.focus(); return; }
+      if (!(price > 0)) { p.focus(); return; }
+      U.cart.push({ key: "x|" + newId(), dish: null, name: name, label: "", price: price, ask: false, qty: 1 });
+      n.value = ""; p.value = ""; U.dirty = true; refreshOrder("cart");
+    },
+    clearcart: function (b) {
+      if (!b.classList.contains("armed")) { b.classList.add("armed"); b.textContent = "Tap again to clear"; return; }
+      U.cart = []; refreshOrder();
+      b.classList.remove("armed"); b.textContent = "Clear order";
+    },
+    done: function (b) {
+      var o = D.orders[b.dataset.id];
+      if (!o) return;
+      o.done = true; o.doneAt = Date.now(); save();
+      sendEvent({ t: "done", id: o.id, at: o.doneAt });
+      say("ok", "Delivered ✅ " + (o.name || "Customer")); render();
+    },
+    undone: function (b) {
+      var o = D.orders[b.dataset.id];
+      if (!o) return;
+      o.done = false; o.doneAt = null; save();
+      sendEvent({ t: "undone", id: o.id });
+      say("ok", "Marked pending: " + (o.name || "Customer")); render();
+    },
+    shareorder: function (b) { var o = D.orders[b.dataset.id]; if (o) shareText(orderText(o)); },
+    editorder: function (b) {
+      var o = D.orders[b.dataset.id];
+      if (!o) return;
+      U.editOrder = o.id; U.q = ""; U.ocat = "";
+      U.cart = (o.items || []).map(function (i) {
+        var label = i.label != null ? i.label : ((/\(([^)]*)\)$/.exec(i.name) || [])[1] || "");
+        var base = i.base || (label ? i.name.replace(/\s*\([^)]*\)$/, "") : i.name);
+        var dish = i.dish && (D.menu || []).find(function (d) { return d.id === i.dish; });
+        if (dish && !dish.opts.some(function (op) { return op.label === label; })) { label = ""; base = i.name; }
+        return { key: dish ? dish.id + "|" + label : "x|" + newId(), dish: dish ? dish.id : null, name: base, label: label,
+          price: Number(i.price), ask: !!i.ask, qty: Number(i.qty) };
+      });
+      go("order", { edit: true });
+    },
+    canceledit: function () { U.editOrder = null; U.cart = []; go("orders", { day: U.day || today() }); },
+    undo: function (b) {
+      var o = D.orders[b.dataset.id];
+      if (!o) return;
+      o.status = "deleted"; save();
+      sendEvent({ t: "undo", id: o.id, date: o.date, name: o.name, total: o.total });
+      U.lastOrder = null;
+      say("ok", "Order removed ↩️ " + (o.name || "Customer") + " · " + rs(o.total));
+      go("orders", { day: o.date });
+    },
+    gotpaid: function (b) {
+      var o = D.orders[b.dataset.id];
+      if (!o) return;
+      o.paid = true; o.paidAt = Date.now(); save();
+      sendEvent({ t: "paid", id: o.id, at: o.paidAt });
+      say("ok", "Payment done ✅ " + (o.name || "Customer") + " · " + rs(o.total)); render();
+    },
+    unpaid: function (b) {
+      var o = D.orders[b.dataset.id];
+      if (!o) return;
+      o.paid = false; o.paidAt = null; save();
+      sendEvent({ t: "unpaid", id: o.id });
+      say("ok", "Marked payment not done: " + (o.name || "Customer") + " · " + rs(o.total)); render();
+    },
+    ofilter: function (b) { U.ofilter = b.dataset.f; render(); },
+    hmonth: function (b) { U.month = addMonths(U.month || today().slice(0, 7), Number(b.dataset.n)); render(); },
+    shareorders: function () { shareText(ordersReport(U.day)); },
+    newcode: function () { setCode(makeCode()); say("ok", "Kitchen code made ✅ Now type this code on the other phones."); go("settings"); },
+    keepalerts: function () { if (window.KitchenApp && window.KitchenApp.keepAlertsOn) window.KitchenApp.keepAlertsOn(); },
+    remove: function (b) {
+      var key = b.dataset.key;
+      if (U.armed !== key) { U.armed = key; render(); return; }
+      U.armed = null;
+      var i = key.indexOf(":"), kind = key.slice(0, i), id = key.slice(i + 1);
+      if (kind === "order") {
+        var o = D.orders[id];
+        if (o) {
+          o.status = "deleted"; save();
+          sendEvent({ t: "undo", id: id, date: o.date, name: o.name, total: o.total });
+          say("ok", "Order deleted 🗑 " + (o.name || "Customer") + " · " + rs(o.total));
+          if (U.view === "pending") render(); else go("orders", { day: o.date, keepFilter: true });
+        }
+        return;
+      }
+      if (kind === "dish") {
+        D.menu = (D.menu || []).filter(function (x) { return x.id !== id; }); D.menuEdited = true;
+        D.menuRemoved = (D.menuRemoved || []).concat([id]); save();
+        sendEvent({ t: "dishdel", id: id }); say("ok", "Dish removed."); go("menu"); return;
+      }
+      if (kind === "code") { setCode(""); say("ok", "This phone stopped sharing orders."); go("settings"); return; }
+      if (kind === "sales") { delete D.sales[id]; save(); say("ok", "Removed sales for " + nice(id).toLowerCase()); go("sales", { day: id }); return; }
+      if (kind === "spent") { D.spent = D.spent.filter(function (x) { return x.id !== id; }); save(); say("ok", "Removed."); go("spent", { day: U.day }); return; }
+      if (kind === "buy") { D.buy = D.buy.filter(function (x) { return x.id !== id; }); save(); say("ok", "Removed from the list."); go("buy"); return; }
+      if (kind === "item") { D.items = D.items.filter(function (x) { return x.id !== id; }); save(); say("ok", "Item removed."); go("stock"); }
+    },
+    bought: function (b) {
+      var r = D.buy.find(function (x) { return x.id === b.dataset.id; });
+      if (!r) return;
+      r.status = "bought"; r.boughtOn = today(); r.at = Date.now();
+      var item = D.items.find(function (i) { return i.name.toLowerCase() === r.name.toLowerCase(); });
+      if (item && r.qty) item.qty = Math.round((Number(item.qty || 0) + Number(r.qty)) * 100) / 100;
+      save(); say("ok", "Bought ✅ " + r.name + (item && r.qty ? " (added to stock)" : "")); go("buy");
+    },
+    addlow: function (b) {
+      var i = D.items.find(function (x) { return x.id === b.dataset.id; });
+      if (!i) return;
+      D.buy.push({ id: newId(), name: i.name, qty: 0, unit: i.unit, note: "", status: "open", at: Date.now() });
+      save(); say("ok", "Added ✅ " + i.name); go("buy");
+    },
+    month: function (b) { U.month = addMonths(U.month, Number(b.dataset.n)); go("report", { month: U.month }); },
+    sharetoday: function () { shareText(dayReport(today())); },
+    sharemonth: function () { shareText(monthReport(U.month)); },
+    backup: function () {
+      var t = today();
+      D.lastBackup = t; save();
+      shareFile("kitchen-backup-" + t + ".json", JSON.stringify(D));
+      say("ok", "Backup made ✅ Send it to yourself (WhatsApp or Gmail) so it is safe.");
+      render();
+    },
+    restoreyes: function () {
+      var me = D.deviceId;
+      D = fix(U.restore); D.deviceId = me; D.outbox = []; U.restore = null; save(); bridgeSetup();
+      say("ok", "Backup brought back ✅"); go("home");
+    },
+    restoreno: function () { U.restore = null; render(); }
+  };
+
+  function showError(f, err) {
+    var old = app.querySelector(".flash.bad.inline");
+    if (old) old.remove();
+    var div = document.createElement("div");
+    div.className = "flash bad inline"; div.setAttribute("role", "alert"); div.textContent = err && err.message ? err.message : "Something went wrong. Please try again.";
+    f.parentNode.insertBefore(div, f);
+    div.scrollIntoView({ block: "center" });
+  }
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-go],[data-act],[data-day]");
+    if (!b) return;
+    if (b.dataset.go) { U.flash = null; go(b.dataset.go, { id: b.dataset.id, day: b.dataset.day }); return; }
+    if (b.dataset.day) { U.flash = null; go(U.view, { day: b.dataset.day }); return; }
+    var fn = acts[b.dataset.act];
+    if (fn) { try { fn(b); } catch (err) { say("bad", err.message || "Something went wrong."); render(); } }
+  });
+  document.addEventListener("submit", function (e) {
+    var f = e.target.closest("form[data-form]");
+    if (!f) return;
+    e.preventDefault();
+    try { forms[f.dataset.form](f, e.submitter); } catch (err) { showError(f, err); }
+  });
+  document.addEventListener("input", function (e) {
+    if (e.target.closest("form")) U.dirty = true;
+    if (e.target.id === "msearch") { U.q = e.target.value; refreshOrder("results"); return; }
+    if (e.target.dataset && e.target.dataset.k && e.target.closest("#cart")) {
+      var c = cartFind(e.target.dataset.k);
+      if (!c) return;
+      c.price = Number(String(e.target.value).replace(/,/g, "")) || 0;
+      e.target.closest("li").querySelector(".camt").textContent = rs(c.qty * c.price);
+      refreshOrder("totals");
+    }
+  });
+  document.addEventListener("keydown", function (e) {
+    // Enter in the search box should not save the order
+    if (e.key === "Enter" && e.target.id === "msearch") { e.preventDefault(); e.target.blur(); }
+  });
+  document.addEventListener("change", function (e) {
+    if (e.target.id === "pickday" && e.target.value) { go(U.view, { day: e.target.value > today() ? today() : e.target.value }); return; }
+    if (e.target.id === "restorefile" && e.target.files && e.target.files[0]) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        try {
+          var d = JSON.parse(reader.result);
+          if (!d || d.v !== 1 || typeof d.sales !== "object" || !Array.isArray(d.spent)) throw new Error("bad");
+          U.restore = fix(d);
+        } catch (err) { say("bad", "That file is not a Kitchen Book backup."); }
+        render();
+      };
+      reader.readAsText(e.target.files[0]);
+    }
+  });
+
+  render();
+  bridgeSetup();
+  syncNow();
+  // Web version: keep working offline after the first visit.
+  if ("serviceWorker" in navigator && !window.KitchenApp && location.protocol === "https:") {
+    navigator.serviceWorker.register("sw.js").catch(function () {});
+  }
+})();
+</script>
+</body>
+</html>
