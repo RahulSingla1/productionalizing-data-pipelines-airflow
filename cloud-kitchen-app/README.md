@@ -187,3 +187,16 @@ Each phone still keeps its own data, so make a backup every week.
 
 Any change pushed to `android/` rebuilds the app automatically (`.github/workflows/kitchen-android.yml`)
 and replaces the download. New versions install over the old one and keep the data.
+
+### Web version (any phone, iPhone or laptop)
+
+The same screens are published to the `gh-pages` branch on every build. Switch GitHub Pages on once:
+**Settings → Pages → Build and deployment → Source: Deploy from a branch → Branch: `gh-pages` / `(root)` → Save.**
+Then open https://rahulsingla1.github.io/productionalizing-data-pipelines-airflow/ and use "Add to Home Screen".
+After the first visit it also works offline. Each browser keeps its own data; join the same kitchen code to share
+orders. Order notifications in a browser only appear while the page is open (the Android app shows them always).
+
+### Orders, status and history (version 2.0)
+- Each order gets a number for the day (#1, #2…) and the time it was taken, paid and cancelled.
+- Status: Taken, Payment done / Payment not done (can be switched either way), Cancelled. Filter by status.
+- "Dishes sold" under each day's orders, and "📅 Past days" for any month's orders, dishes and money.
